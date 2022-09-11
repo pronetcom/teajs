@@ -1,0 +1,5 @@
+
+void GLUTInitCallback(const FunctionCallbackInfo<Value>& args) {
+  glutInit(( int* ) pargc_, ( char** ) argv_);
+  args.GetReturnValue().SetUndefined();
+}
