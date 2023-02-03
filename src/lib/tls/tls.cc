@@ -70,7 +70,7 @@ void finalize(v8::Local<v8::Object> obj) {
 	SSL_free(ssl);
 }
 
-void finalize2(void*ptr) {
+void finalize2(void* ptr) {
 	SSL * ssl = (SSL*)ptr;
 	SSL_free(ssl);
 }
@@ -134,6 +134,15 @@ JS_METHOD(_accept) {
 	int result = SSL_accept(ssl);
 	
 	if (result == 1) {
+		long verify_flag = (int)SSL_get_verify_result(ssl);
+		if (verify_flag != X509_V_OK) {
+			if (verify_flag == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY) {
+				JS_ERROR("ERROR CERT\n");
+			}
+			SSL_ERROR(ssl, verify_flag);
+			std::string certError = "Certificate verification error" + std::to_string((int)verify_flag);
+			JS_ERROR(certError.c_str());
+		}
 		args.GetReturnValue().Set(args.This());
 	} else if (result == -1 && SSL_get_error(ssl, result) == SSL_ERROR_WANT_READ) { /* blocking socket */
 		args.GetReturnValue().Set(JS_BOOL(false));
@@ -147,6 +156,15 @@ JS_METHOD(_connect) {
 	int result = SSL_connect(ssl);
 	
 	if (result == 1) {
+		long verify_flag = (int)SSL_get_verify_result(ssl);
+		if (verify_flag != X509_V_OK) {
+			if (verify_flag == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY) {
+				JS_ERROR("ERROR CERT\n");
+			}
+			SSL_ERROR(ssl, verify_flag);
+			std::string certError = "Certificate verification error" + std::to_string((int)verify_flag);
+			JS_ERROR(certError.c_str());
+		}
 		args.GetReturnValue().Set(args.This());
 	} else {
 		SSL_ERROR(ssl, result);
@@ -167,6 +185,15 @@ JS_METHOD(_receive) {
 				SSL_ERROR(ssl, (int)result);
 				return;
 			}
+		}
+		long verify_flag = (int)SSL_get_verify_result(ssl);
+		if (verify_flag != X509_V_OK) {
+			if (verify_flag == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY) {
+				JS_ERROR("ERROR CERT\n");
+			}
+			SSL_ERROR(ssl, verify_flag);
+			std::string certError = "Certificate verification error" + std::to_string((int)verify_flag);
+			JS_ERROR(certError.c_str());
 		}
 		v8::Local<v8::Value> buffer = JS_BUFFER(data, result);
 		delete[] data;
@@ -207,6 +234,16 @@ JS_METHOD(_receive_strict) {
 		}
 		//printf("SSL_read() recv_cap=%d\n",recv_cap);
 		len = SSL_read(ssl, tmp, recv_cap);
+
+		long verify_flag = (int)SSL_get_verify_result(ssl);
+		if (verify_flag != X509_V_OK) {
+			if (verify_flag == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY) {
+				JS_ERROR("ERROR CERT\n");
+			}
+			SSL_ERROR(ssl, verify_flag);
+			std::string certError = "Certificate verification error" + std::to_string((int)verify_flag);
+			JS_ERROR(certError.c_str());
+		}
 		//printf("	SSL_read() len=%d\n",len);
 
 		if (len==0) {
@@ -241,6 +278,16 @@ JS_METHOD(_send) {
 		v8::String::Utf8Value data(JS_ISOLATE,args[0]);
 		result = SSL_write(ssl, *data, data.length());
 	}
+	long verify_flag = (int)SSL_get_verify_result(ssl);
+	if (verify_flag != X509_V_OK) {
+		// X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY
+		if (verify_flag == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY) {
+			JS_ERROR("ERROR CERT\n");
+		}
+		SSL_ERROR(ssl, verify_flag);
+		std::string certError = "Certificate verification error" + std::to_string((int)verify_flag) + "\n";
+		JS_ERROR(certError.c_str());
+	}
 	
 	if (result > 0) {
 		args.GetReturnValue().Set(args.This());
@@ -263,6 +310,69 @@ JS_METHOD(_close) {
 	} else {
 		SSL_ERROR(ssl, result);
 	}
+}
+
+JS_METHOD(_setTLSMethod) {
+	//SSL_CTX_free(ctx);
+	if (args.Length() < 1) { SSL_CTX_set_min_proto_version(ctx, 3); return; }
+	if (args[0]->IsUint32()) {
+		v8::Local<v8::Context> context = v8::Context::New(JS_ISOLATE);
+		v8::Maybe<uint32_t> maybe_uint = args[0]->Uint32Value(context);
+		if (maybe_uint.IsJust()) {
+			uint32_t method = maybe_uint.FromJust();
+			SSL_CTX_set_min_proto_version(ctx, method);
+		}
+		else {
+			JS_ERROR("setTLSMethod: failed conversion\n");
+		}
+	}
+	else {
+		JS_ERROR("setTLSMethod: wrong type\n");
+	}
+	//v8::Integer method = v8::Integer::New(JS_ISOLATE, );
+	
+	/*
+	std::string m(*method);
+	if (m == "TLSv1_method") {
+		ctx = SSL_CTX_new(TLSv1_method());
+	}
+	else if (m == "TLSv1_server_method") {
+		ctx = SSL_CTX_new(TLSv1_server_method());
+	}
+	else if (m == "TLSv1_client_method") {
+		ctx = SSL_CTX_new(TLSv1_client_method());
+	}
+	else if (m == "TLSv1_1_method") {
+		ctx = SSL_CTX_new(TLSv1_1_method());
+	}
+	else if (m == "TLSv1_1_server_method") {
+		ctx = SSL_CTX_new(TLSv1_1_server_method());
+	}
+	else if (m == "TLSv1_1_client_method") {
+		ctx = SSL_CTX_new(TLSv1_1_client_method());
+	}
+	else if (m == "TLSv1_2_method") {
+		ctx = SSL_CTX_new(TLSv1_2_method());
+	}
+	else if (m == "TLSv1_2_server_method") {
+		ctx = SSL_CTX_new(TLSv1_2_server_method());
+	}
+	else if (m == "TLSv1_2_client_method") {
+		ctx = SSL_CTX_new(TLSv1_2_client_method());
+	}
+	else if (m == "TLSv1_3_method") {
+		ctx = SSL_CTX_new(TLSv1_3_method());
+	}
+	else if (m == "TLSv1_3_server_method") {
+		ctx = SSL_CTX_new(TLSv1_3_server_method());
+	}
+	else if (m == "TLSv1_3_client_method") {
+		ctx = SSL_CTX_new(TLSv1_3_client_method());
+	}
+	else {
+		ctx = SSL_CTX_new(TLSv1_3_method());
+	}
+	*/
 }
 
 }
