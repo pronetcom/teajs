@@ -140,7 +140,8 @@ JS_METHOD(_accept) {
 				JS_ERROR("ERROR CERT\n");
 			}
 			SSL_ERROR(ssl, verify_flag);
-			std::string certError = "Certificate verification error" + std::to_string((int)verify_flag);
+			std::string certError = "Certificate verification error " + std::to_string((int)verify_flag) +
+				" " + std::to_string((int)X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY) + "\n";
 			JS_ERROR(certError.c_str());
 		}
 		args.GetReturnValue().Set(args.This());
@@ -162,7 +163,8 @@ JS_METHOD(_connect) {
 				JS_ERROR("ERROR CERT\n");
 			}
 			SSL_ERROR(ssl, verify_flag);
-			std::string certError = "Certificate verification error" + std::to_string((int)verify_flag);
+			std::string certError = "Certificate verification error " + std::to_string((int)verify_flag) +
+				" " + std::to_string((int)X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY) + "\n";
 			JS_ERROR(certError.c_str());
 		}
 		args.GetReturnValue().Set(args.This());
@@ -382,6 +384,10 @@ SHARED_INIT() {
 	SSL_library_init();
 	SSL_load_error_strings();
 	ctx = SSL_CTX_new(TLS_method());
+
+	if (!SSL_CTX_load_verify_locations(ctx, "/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/certs/")) {
+		JS_ERROR("CTX Certificate init failed\n");
+	}
 
 	v8::HandleScope handle_scope(JS_ISOLATE);//v8::LocalScope handle_scope(JS_ISOLATE);
 
