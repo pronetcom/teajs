@@ -26,6 +26,8 @@
 #define SSL_ERROR(ssl, ret) JS_ERROR(formatError(ssl, ret).c_str())
 
 namespace {
+
+bool needToCheckCertificate;
 	
 SSL_CTX * ctx;
 
@@ -102,6 +104,8 @@ JS_METHOD(_tls) {
 
 	SSL * ssl = SSL_new(ctx);
 	SSL_set_fd(ssl, LOAD_SOCKET);
+
+	// SSL_ctrl(ssl, SSL_CTRL_SET_TLSEXT_HOSTNAME, TLSEXT_NAMETYPE_host_name, (void*)"logincall.reconn.ru/api/v1/calls/make");
 	SAVE_PTR(1, ssl);
 
 	GC * gc = GC_PTR;
@@ -331,52 +335,25 @@ JS_METHOD(_setTLSMethod) {
 	else {
 		JS_ERROR("setTLSMethod: wrong type\n");
 	}
-	//v8::Integer method = v8::Integer::New(JS_ISOLATE, );
-	
-	/*
-	std::string m(*method);
-	if (m == "TLSv1_method") {
-		ctx = SSL_CTX_new(TLSv1_method());
-	}
-	else if (m == "TLSv1_server_method") {
-		ctx = SSL_CTX_new(TLSv1_server_method());
-	}
-	else if (m == "TLSv1_client_method") {
-		ctx = SSL_CTX_new(TLSv1_client_method());
-	}
-	else if (m == "TLSv1_1_method") {
-		ctx = SSL_CTX_new(TLSv1_1_method());
-	}
-	else if (m == "TLSv1_1_server_method") {
-		ctx = SSL_CTX_new(TLSv1_1_server_method());
-	}
-	else if (m == "TLSv1_1_client_method") {
-		ctx = SSL_CTX_new(TLSv1_1_client_method());
-	}
-	else if (m == "TLSv1_2_method") {
-		ctx = SSL_CTX_new(TLSv1_2_method());
-	}
-	else if (m == "TLSv1_2_server_method") {
-		ctx = SSL_CTX_new(TLSv1_2_server_method());
-	}
-	else if (m == "TLSv1_2_client_method") {
-		ctx = SSL_CTX_new(TLSv1_2_client_method());
-	}
-	else if (m == "TLSv1_3_method") {
-		ctx = SSL_CTX_new(TLSv1_3_method());
-	}
-	else if (m == "TLSv1_3_server_method") {
-		ctx = SSL_CTX_new(TLSv1_3_server_method());
-	}
-	else if (m == "TLSv1_3_client_method") {
-		ctx = SSL_CTX_new(TLSv1_3_client_method());
+}
+/*
+JS_METHOD(_setCertificateCheck) {
+	if (args.Length() != 1) { JS_ERROR("_setCertificateCheck: wrong number of arguments"); }
+	if (args[0]->IsBooleanObject()) {
+		v8::Local<v8::Context> context = v8::Context::New(JS_ISOLATE);
+		v8::Maybe<bool> maybe_bool = args[0]->BooleanValue(context);
+		if (maybe_bool.IsJust()) {
+			needToCheckCertificate = maybe_bool.FromJust();
+		}
+		else {
+			JS_ERROR("setTLSMethod: failed conversion\n");
+		}
 	}
 	else {
-		ctx = SSL_CTX_new(TLSv1_3_method());
+		JS_ERROR("setTLSMethod: wrong type\n");
 	}
-	*/
 }
-
+*/
 }
 
 SHARED_INIT() {
@@ -384,6 +361,7 @@ SHARED_INIT() {
 	SSL_library_init();
 	SSL_load_error_strings();
 	ctx = SSL_CTX_new(TLS_method());
+	needToCheckCertificate = true;
 
 	if (!SSL_CTX_load_verify_locations(ctx, "/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/certs/")) {
 		JS_ERROR("CTX Certificate init failed\n");
@@ -402,16 +380,18 @@ SHARED_INIT() {
 	/**
 	 * Prototype methods (new TLS().*)
 	 */
-	pt->Set(JS_ISOLATE,"getSocket"			, v8::FunctionTemplate::New(JS_ISOLATE, _getSocket));
-	pt->Set(JS_ISOLATE,"verifyCertificate"	, v8::FunctionTemplate::New(JS_ISOLATE, _verifyCertificate));
-	pt->Set(JS_ISOLATE,"useCertificate"		, v8::FunctionTemplate::New(JS_ISOLATE, _useCertificate));
-	pt->Set(JS_ISOLATE,"usePrivateKey"		, v8::FunctionTemplate::New(JS_ISOLATE, _usePrivateKey));
-	pt->Set(JS_ISOLATE,"accept"				, v8::FunctionTemplate::New(JS_ISOLATE, _accept));
-	pt->Set(JS_ISOLATE,"connect"			, v8::FunctionTemplate::New(JS_ISOLATE, _connect));
-	pt->Set(JS_ISOLATE,"receive"			, v8::FunctionTemplate::New(JS_ISOLATE, _receive));
-	pt->Set(JS_ISOLATE,"receive_strict"		, v8::FunctionTemplate::New(JS_ISOLATE, _receive_strict));
-	pt->Set(JS_ISOLATE,"send"				, v8::FunctionTemplate::New(JS_ISOLATE, _send));
-	pt->Set(JS_ISOLATE,"close"				, v8::FunctionTemplate::New(JS_ISOLATE, _close));
+	pt->Set(JS_ISOLATE,"getSocket"			 , v8::FunctionTemplate::New(JS_ISOLATE, _getSocket));
+	pt->Set(JS_ISOLATE,"verifyCertificate"	 , v8::FunctionTemplate::New(JS_ISOLATE, _verifyCertificate));
+	pt->Set(JS_ISOLATE,"useCertificate"		 , v8::FunctionTemplate::New(JS_ISOLATE, _useCertificate));
+	pt->Set(JS_ISOLATE,"usePrivateKey"		 , v8::FunctionTemplate::New(JS_ISOLATE, _usePrivateKey));
+	pt->Set(JS_ISOLATE,"accept"				 , v8::FunctionTemplate::New(JS_ISOLATE, _accept));
+	pt->Set(JS_ISOLATE,"connect"			 , v8::FunctionTemplate::New(JS_ISOLATE, _connect));
+	pt->Set(JS_ISOLATE,"receive"			 , v8::FunctionTemplate::New(JS_ISOLATE, _receive));
+	pt->Set(JS_ISOLATE,"receive_strict"		 , v8::FunctionTemplate::New(JS_ISOLATE, _receive_strict));
+	pt->Set(JS_ISOLATE,"send"				 , v8::FunctionTemplate::New(JS_ISOLATE, _send));
+	pt->Set(JS_ISOLATE,"close"				 , v8::FunctionTemplate::New(JS_ISOLATE, _close));
+	pt->Set(JS_ISOLATE, "setTLSMethod"		 , v8::FunctionTemplate::New(JS_ISOLATE, _setTLSMethod));
+	//pt->Set(JS_ISOLATE, "setCertificateCheck", v8::FunctionTemplate::New(JS_ISOLATE, _setCertificateCheck));
 
 	(void)exports->Set(JS_CONTEXT,JS_STR("TLS"), ft->GetFunction(JS_CONTEXT).ToLocalChecked());
 }
