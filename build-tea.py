@@ -17,6 +17,13 @@ def get_dependencies_list(params):
             "libraries":[]
         },
         {
+            "name":"fcgi",
+            "name_pkg_config":"fcgi",
+            "optional":0,
+            "includes_copy":["fcgiapp.h","fcgi_config.h","fcgimisc.h","fcgio.h","fcgios.h","fcgi_stdio.h"],
+            "libraries":[]
+        },
+        {
             "name":"gd",
             "name_pkg_config":"gdlib",
             "optional":0,

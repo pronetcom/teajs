@@ -36,8 +36,7 @@ exports.testHTTPS_long = function() {
 	do_download("https://teajs.org/dltest/long_file.txt",10*1024*1024);
 };
 exports.testHTTPS_reconn = function() {
-	// do_download("https://logincall.reconn.ru/api/v1/calls/make", 0);
-	do_download("https://logincall.reconn.ru/login", 4889);
+	do_download("https://logincall.reconn.ru/api/v1/calls/make", 378);
 };
 exports.testHTTPS_short2 = function() {
 	do_download("https://easymerch.com/site.css",-1,undefined,{"CONTENT-TYPE": "text/css","CONNECTION": "close"});

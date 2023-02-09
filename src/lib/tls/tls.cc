@@ -72,7 +72,7 @@ void finalize(v8::Local<v8::Object> obj) {
 	SSL_free(ssl);
 }
 
-void finalize2(void* ptr) {
+void finalize2(void*ptr) {
 	SSL * ssl = (SSL*)ptr;
 	SSL_free(ssl);
 }
@@ -377,19 +377,19 @@ SHARED_INIT() {
 	/**
 	 * Prototype methods (new TLS().*)
 	 */
-	pt->Set(JS_ISOLATE, "getSocket"			 , v8::FunctionTemplate::New(JS_ISOLATE, _getSocket));
-	pt->Set(JS_ISOLATE, "verifyCertificate"	 , v8::FunctionTemplate::New(JS_ISOLATE, _verifyCertificate));
-	pt->Set(JS_ISOLATE, "useCertificate"		 , v8::FunctionTemplate::New(JS_ISOLATE, _useCertificate));
-	pt->Set(JS_ISOLATE, "usePrivateKey"		 , v8::FunctionTemplate::New(JS_ISOLATE, _usePrivateKey));
-	pt->Set(JS_ISOLATE, "accept"				 , v8::FunctionTemplate::New(JS_ISOLATE, _accept));
-	pt->Set(JS_ISOLATE, "connect"			 , v8::FunctionTemplate::New(JS_ISOLATE, _connect));
-	pt->Set(JS_ISOLATE, "receive"			 , v8::FunctionTemplate::New(JS_ISOLATE, _receive));
-	pt->Set(JS_ISOLATE, "receive_strict"		 , v8::FunctionTemplate::New(JS_ISOLATE, _receive_strict));
-	pt->Set(JS_ISOLATE, "send"				 , v8::FunctionTemplate::New(JS_ISOLATE, _send));
-	pt->Set(JS_ISOLATE, "close"				 , v8::FunctionTemplate::New(JS_ISOLATE, _close));
-	pt->Set(JS_ISOLATE, "setTLSMethod"		 , v8::FunctionTemplate::New(JS_ISOLATE, _setTLSMethod));
+	pt->Set(JS_ISOLATE, "getSocket",           v8::FunctionTemplate::New(JS_ISOLATE, _getSocket));
+	pt->Set(JS_ISOLATE, "verifyCertificate",   v8::FunctionTemplate::New(JS_ISOLATE, _verifyCertificate));
+	pt->Set(JS_ISOLATE, "useCertificate",      v8::FunctionTemplate::New(JS_ISOLATE, _useCertificate));
+	pt->Set(JS_ISOLATE, "usePrivateKey",       v8::FunctionTemplate::New(JS_ISOLATE, _usePrivateKey));
+	pt->Set(JS_ISOLATE, "accept",              v8::FunctionTemplate::New(JS_ISOLATE, _accept));
+	pt->Set(JS_ISOLATE, "connect",             v8::FunctionTemplate::New(JS_ISOLATE, _connect));
+	pt->Set(JS_ISOLATE, "receive",             v8::FunctionTemplate::New(JS_ISOLATE, _receive));
+	pt->Set(JS_ISOLATE, "receive_strict",      v8::FunctionTemplate::New(JS_ISOLATE, _receive_strict));
+	pt->Set(JS_ISOLATE, "send",                v8::FunctionTemplate::New(JS_ISOLATE, _send));
+	pt->Set(JS_ISOLATE, "close",               v8::FunctionTemplate::New(JS_ISOLATE, _close));
+	pt->Set(JS_ISOLATE, "setTLSMethod",        v8::FunctionTemplate::New(JS_ISOLATE, _setTLSMethod));
 	pt->Set(JS_ISOLATE, "setCertificateCheck", v8::FunctionTemplate::New(JS_ISOLATE, _setCertificateCheck));
-	pt->Set(JS_ISOLATE, "setSNI", v8::FunctionTemplate::New(JS_ISOLATE, _setSNI));
+	pt->Set(JS_ISOLATE, "setSNI",              v8::FunctionTemplate::New(JS_ISOLATE, _setSNI));
 
 	(void)exports->Set(JS_CONTEXT,JS_STR("TLS"), ft->GetFunction(JS_CONTEXT).ToLocalChecked());
 }
