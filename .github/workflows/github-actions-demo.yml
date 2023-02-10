@@ -5,8 +5,6 @@ jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          ./build-tea.py clean
 	- run: ./build-v8.sh
         shell: bash  
       - run: ./build-tea.py build
