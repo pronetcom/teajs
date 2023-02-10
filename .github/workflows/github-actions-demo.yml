@@ -5,8 +5,8 @@ jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
     steps:
-	- run: ./build-v8.sh
+	- run: build-v8.sh
         shell: bash  
-      - run: ./build-tea.py build
-      - run: ./test.sh
+      - run: build-tea.py build
+      - run: test.sh
       - run: echo "🍏 This job's status is ${{ job.status }}."
