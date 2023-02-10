@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: build v8
-	  run: |
+        run: |
           ./build-v8.sh
           shell: bash  
       - name: build tea
