@@ -1,12 +1,18 @@
-name: GitHub Assembly and Testing
-run-name: Assembly and Testing
+name: GitHub Build and Testing
+run-name: Build and Testing
 on: [push]
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
     steps:
-	- run: build-v8.sh
-        shell: bash  
-      - run: build-tea.py build
-      - run: test.sh
+      - name: build v8
+	  run: |
+          ./build-v8.sh
+          shell: bash  
+      - name: build tea
+        run: |
+          ./build-tea.py build
+      - name: test
+        run: |
+          ./test.sh
       - run: echo "🍏 This job's status is ${{ job.status }}."
