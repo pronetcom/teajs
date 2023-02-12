@@ -8,8 +8,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: build v8
         run: |
-          ./build-v8.sh
-          shell: bash  
+          ./build-v8.sh  
       - name: build tea
         run: |
           ./build-tea.py build
