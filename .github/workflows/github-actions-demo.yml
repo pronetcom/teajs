@@ -3,7 +3,7 @@ run-name: Build and Testing
 on: [push]
 jobs:
   Explore-GitHub-Actions:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: install update
         run: |
