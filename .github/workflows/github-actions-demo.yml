@@ -7,10 +7,16 @@ jobs:
     steps:
       - name: install update
         run: |
-          sudo apt-get install libgd-tools
+          sudo apt-get update
       - name: install gdlib
         run: |
-          sudo apt-get update
+          sudo apt-get install libgd-tools libgd-dev
+      - name: install libz
+        run: |
+          sudo apt-get install zlib1g-dev
+      - name: install ssl
+        run: |
+          sudo apt-get install libssl-dev
       - uses: actions/checkout@v2
       - name: build v8
         run: |
