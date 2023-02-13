@@ -8,9 +8,12 @@ jobs:
       - name: install update
         run: |
           sudo apt-get update
+      - name: remove libgd3
+        run: |
+          sudo apt-get remove libgd3
       - name: install gdlib
         run: |
-          sudo apt-get install libgd-tools libgd-dev
+          sudo apt-get install -yq libgd-tools libgd-dev
       - name: install libz
         run: |
           sudo apt-get install zlib1g-dev
