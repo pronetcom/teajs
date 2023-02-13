@@ -5,10 +5,16 @@ jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
     steps:
+      - name: install update
+        run: |
+          sudo apt-get install libgd-tools
+      - name: install gdlib
+        run: |
+          sudo apt-get update
       - uses: actions/checkout@v2
       - name: build v8
         run: |
-          ./build-v8.sh  
+          ./build-v8.sh
       - name: build tea
         run: |
           ./build-tea.py build
