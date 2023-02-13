@@ -8,6 +8,9 @@ jobs:
       - name: install update
         run: |
           sudo apt-get update
+      - name: remove nginx
+        run: |
+          sudo apt-get remove nginx
       - name: remove libgd3
         run: |
           sudo apt-get remove libgd3
