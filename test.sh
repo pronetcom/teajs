@@ -25,3 +25,10 @@ echo "Running unit/throw.js"
 echo "THIS MUST FAIL (uncatched syntax error)"
 echo "Running unit/syntax_error.js"
 ./tea unit/syntax_error.js
+
+if [ $? -eq 0 ]
+then
+    exit 1
+else
+    exit 0
+fi
