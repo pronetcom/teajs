@@ -14,18 +14,9 @@ jobs:
       - name: remove libgd3
         run: |
           sudo apt-get remove libgd3
-      - name: install gdlib
+      - name: install libraries
         run: |
-          sudo apt-get install -yq libgd-tools libgd-dev
-      - name: install libz
-        run: |
-          sudo apt-get install zlib1g-dev
-      - name: install fcgi
-        run: |
-          sudo apt-get install libfcgi-dev
-      - name: install ssl
-        run: |
-          sudo apt-get install libssl-dev
+          sudo apt-get install -yq libgd-tools libgd-dev zlib1g-dev libfcgi-dev libx32stdc++6-amd64-cross libssl-dev
       - uses: actions/checkout@v2
       - name: build v8
         run: |
