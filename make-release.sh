@@ -1,4 +1,3 @@
-mkdir deploy
 cp tea deploy/tea
 cp libtea.so deploy/libtea.so
 cp lib/binary.so deploy/binary.so
