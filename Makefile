@@ -19,8 +19,8 @@ V8_LIBSPATH=out/x64.release/
 V8_LIBS=@d8_objects.txt ${D8_ARCHIVES} ${D8_LIBPATHS}
 #V8_LIBS=${D8_ARCHIVES} -L/home/vahvarh/try_teajs/v8_things/v8/out/x64.release/obj/third_party/zlib/ -L/home/vahvarh/try_teajs/v8_things/v8/out/x64.release/obj/third_party/zlib/google
 
-LIBS_ELF=-L/usr/lib/ -L${V8_BASEDIR}/$(V8_LIBSPATH)/obj -L${V8_BASEDIR}/$(V8_LIBSPATH) $(V8_LIBS) ${D8_LDFLAGS__} ${D8_LIBS} -pthread -ggdb -L. -L/usr/lib/x86_64-linux-gnu/ ${FCGI_LIBRARY} -ltea -lfcgi
-LIBS_SO =-L/usr/lib/ -L${V8_BASEDIR}/$(V8_LIBSPATH)/obj -L${V8_BASEDIR}/$(V8_LIBSPATH) $(V8_LIBS) ${D8_LDFLAGS__} ${D8_LIBS} -pthread -ggdb -L. -L/usr/lib/x86_64-linux-gnu/ ${FCGI_LIBRARY} -lfcgi
+LIBS_ELF=-L/usr/lib/ -L${V8_BASEDIR}/$(V8_LIBSPATH)/obj -L${V8_BASEDIR}/$(V8_LIBSPATH) $(V8_LIBS) ${D8_LDFLAGS__} ${D8_LIBS} -pthread -ggdb -L. -L/usr/lib/x86_64-linux-gnu/ ${FCGI_LIBRARY} -ltea -lfcgi -Wl,-rpath -Wl,. 
+LIBS_SO =-L/usr/lib/ -L${V8_BASEDIR}/$(V8_LIBSPATH)/obj -L${V8_BASEDIR}/$(V8_LIBSPATH) $(V8_LIBS) ${D8_LDFLAGS__} ${D8_LIBS} -pthread -ggdb -L. -L/usr/lib/x86_64-linux-gnu/ ${FCGI_LIBRARY} -lfcgi -Wl,-rpath -Wl,.
 
 #LIBS_ELF=-L. -L/usr/lib/x86_64-linux-gnu/ -L/usr/lib/x86_64-linux-gnu -L${V8_BASEDIR}/out/x64.debug -lpthread -lv8 -lv8_libplatform -ldl -ltea -pthread -std=${STD_CPP} -ggdb -lfcgi
 #LIBS_SO=-L. -L/usr/lib/x86_64-linux-gnu/ -L/usr/lib/x86_64-linux-gnu -L${V8_BASEDIR}/out/x64.debug -lpthread -lv8 -lv8_libplatform -ldl -ltea -pthread -std=${STD_CPP} -ggdb -lfcgi
