@@ -6,6 +6,7 @@ import re
 import pprint
 import subprocess
 import shutil
+import platform
 
 def get_dependencies_list(params):
     return [
@@ -17,13 +18,19 @@ def get_dependencies_list(params):
             "libraries":[]
         },
         {
+            "name":"fcgi",
+            "name_pkg_config":"fcgi",
+            "optional":0,
+            "includes_copy":["fcgiapp.h","fcgi_config.h","fcgimisc.h","fcgio.h","fcgios.h","fcgi_stdio.h"],
+            "libraries":[]
+        },
+        {
             "name":"gd",
             "name_pkg_config":"gdlib",
             "optional":0,
             "includes_copy":["gdfx.h","gd.h","gd_io.h"],
             "libraries":[]
         }
-
     ]
 
 # Copies params to $ENV
@@ -116,6 +123,8 @@ def resolve_3rd_parties(params):
         params["resolve"]="pkg-config"
     elif os.path.exists("/usr/local/bin/brew"):
         params["resolve"]="brew"
+    elif os.path.exists("/opt/homebrew/bin/brew"):
+        params["resolve"]="brewm"
     else:
         print("No pkg-config and no brew - TODO STOP")
         exit(1)
@@ -143,6 +152,13 @@ def resolve_3rd_party_item(params,dep):
             exit(1)
         params[dep["name"].upper()+'_INCLUDE']="-I/usr/local/opt/"+dep["name"]+"/include -I/usr/local/include/"
         libpath="/usr/local/opt/"+dep["name"]+"/lib"
+        params[dep["name"].upper()+'_LIBRARY']="-L"+libpath+" "+(" ".join(array_unique(get_libraries_by_path(params,dep,libpath))))
+    elif params["resolve"]=="brewm":
+        if not os.path.exists("/opt/homebrew/opt/"+dep["name"]):
+            print("Path does not exist - /opt/homebrew/opt/"+dep["name"])
+            exit(1)
+        params[dep["name"].upper()+'_INCLUDE']="-I/opt/homebrew/opt/"+dep["name"]+"/include -I/opt/homebrew/include/"
+        libpath="/opt/homebrew/opt/"+dep["name"]+"/lib"
         params[dep["name"].upper()+'_LIBRARY']="-L"+libpath+" "+(" ".join(array_unique(get_libraries_by_path(params,dep,libpath))))
     else:
         exit(1)
@@ -195,7 +211,7 @@ def work():
     params['CDIR']=os.path.dirname(os.path.realpath(__file__))
     params['PDIR']=re.sub('([\\\/])[^\\\/]+[\\\/]?$','',params['CDIR'])
     params['V8_BASEDIR']=params['PDIR']+"/v8_things/v8"
-    params['V8_COMPILEDIR']=params['V8_BASEDIR']+"/out/x64.release";
+    params['V8_COMPILEDIR']=params['V8_BASEDIR']+"/out/"+platform.machine().replace("aarch", "arm").replace("x86_64","x64")+".release";
 
     params['TEAJS_BASEDIR']=params['CDIR']
     params['TEAJS_LIBPATH']=params['TEAJS_BASEDIR']+"/lib"

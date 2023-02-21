@@ -146,12 +146,10 @@ JS_METHOD(_accept) {
 			}
 		}
 		
-		
 		args.GetReturnValue().Set(args.This());
 	} else if (result == -1 && SSL_get_error(ssl, result) == SSL_ERROR_WANT_READ) { /* blocking socket */
 		args.GetReturnValue().Set(JS_BOOL(false));
 	} else {
-		printf("1\n");
 		SSL_ERROR(ssl, result);
 	}
 }
@@ -360,7 +358,8 @@ SHARED_INIT() {
 	// SSL_CTX_set_cipher_list(ctx, "ALL");
 	needToCheckCertificate = true;
 
-	if (!SSL_CTX_load_verify_locations(ctx, "/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/certs/")) {
+	// if (!SSL_CTX_load_verify_locations(ctx, "/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/certs/")) {
+	if (!SSL_CTX_set_default_verify_paths(ctx)) {
 		JS_ERROR("CTX Certificate init failed\n");
 	}
 

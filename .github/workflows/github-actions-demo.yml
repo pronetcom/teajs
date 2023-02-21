@@ -2,8 +2,8 @@ name: GitHub Build and Testing
 run-name: Build and Testing
 on: [push]
 jobs:
-  Explore-GitHub-Actions:
-    runs-on: ubuntu-20.04
+  Ubuntu:
+    runs-on: ubuntu-latest
     steps:
       - name: install update
         run: |
@@ -33,7 +33,36 @@ jobs:
       - name: Archive production artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: dist-without-markdown
+          name: teajs-ubuntu
+          path: |
+            deploy
+      - run: echo "🍏 This job's status is ${{ job.status }}."
+MacOS:
+    runs-on: macos-latest
+    steps:
+      - name: install brew
+        run: |
+          sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      - name: install libraries
+        run: |
+          sudo brew install libgd-tools libgd-dev zlib1g-dev libfcgi-dev libssl-dev
+      - uses: actions/checkout@v2
+      - name: build v8
+        run: |
+          ./build-v8.sh
+      - name: build tea
+        run: |
+          ./build-tea.py build
+      - name: test
+        run: |
+          ./test.sh
+      - name: make-release
+        run: |
+          ./make-release.sh
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: teajs-macos
           path: |
             deploy
       - run: echo "🍏 This job's status is ${{ job.status }}."
