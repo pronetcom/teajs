@@ -45,7 +45,7 @@ jobs:
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
       - name: install libraries
         run: |
-          brew install gd gdbm gdk-pixbuf libpq fcgi zlib1g-dev libssl-dev
+          brew install gd gdbm gdk-pixbuf libpq fcgi zlib-ng libssl-dev
       - uses: actions/checkout@v2
       - name: build v8
         run: |
