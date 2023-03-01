@@ -92,10 +92,35 @@ namespace {
 
 			// There is no execlep so on Windows we hope that the first version works.
 			execle(
-				_PATH_BSHELL, "sh", "-c", *command, (char*)NULL, &env_pointers.front());
+				_PATH_BSHELL, "sh", "-c", command, (char*)NULL, &env_pointers.front());
 		}
 		else {
-			execl(_PATH_BSHELL, "sh", "-c", *command, (char*)NULL);
+			execl(_PATH_BSHELL, "sh", "-c", command, (char*)NULL);
+		}
+		exit(127);  // "command not found"
+	}
+
+	void _executeWithArgs(
+		const char* argv[], v8::Object* env) {
+		if (env != NULL) {
+
+			std::vector<std::string> env_strings;
+			std::vector<char const*> env_pointers;
+			v8::Local<v8::Array> keys = env->GetPropertyNames(JS_CONTEXT).ToLocalChecked();
+			for (unsigned int i = 0; i < keys->Length(); i++) {
+				v8::String::Utf8Value key(JS_ISOLATE, keys->Get(JS_CONTEXT, JS_INT(i)).ToLocalChecked()->ToString(JS_CONTEXT).ToLocalChecked());
+				v8::String::Utf8Value value(JS_ISOLATE, env->Get(JS_CONTEXT, JS_STR(*key)).ToLocalChecked()->ToString(JS_CONTEXT).ToLocalChecked());
+				env_strings.push_back(std::string(*key) + "=" + *value);
+				env_pointers.push_back(env_strings.back().c_str());
+			}
+			env_pointers.push_back(NULL);
+
+			// There is no execlep so on Windows we hope that the first version works.
+			execvpe(
+				_PATH_BSHELL, argv, &env_pointers.front());
+		}
+		else {
+			execvp(_PATH_BSHELL, argv);
 		}
 		exit(127);  // "command not found"
 	}
@@ -248,12 +273,10 @@ namespace {
 		char buffer[MAX_BUFFER + 1];
 
 		v8::Local<v8::Array> command_args = v8::Local<v8::Array>::Cast(args[0]);
-		std::string command_arg = "";
-		for (int i = 0; i < command_args->Length(); i++)
-		{
-			v8::Local<v8::String> temp = command_args->Get(JS_CONTEXT, JS_INT(i)).ToLocalChecked()->ToString(JS_CONTEXT).ToLocalChecked();
-			v8::String::Utf8Value temp2(JS_ISOLATE, temp);
-			command_arg += *temp2;
+		char** argv = new char* [command_args->Length()];
+		for (int i = 0; i < command_args->Length(); i++) {
+			v8::String::Utf8Value arg(JS_ISOLATE, command_args->Get(JS_CONTEXT, JS_INT(i)).ToLocalChecked()->ToString(JS_CONTEXT).ToLocalChecked());
+			argv[i] = *arg;
 		}
 		v8::Object* env = NULL;
 		if (arg_count >= 3 && !((*args[2])->IsNull())) {
@@ -293,7 +316,123 @@ namespace {
 			close(err_fd[0]);
 			close(err_fd[1]);
 
-			_executecommand(command_arg.c_str(), env);
+			_executeWithArgs(const_cast<char* const*>(argv), env);
+
+			args.GetReturnValue().SetNull();  // unreachable
+			return;
+
+		default:  // Parent process.
+
+			close(input_fd[0]); // These are being used by the child
+			close(out_fd[1]);
+			close(err_fd[1]);
+
+			if (arg_count >= 2) {
+				v8::String::Utf8Value input_arg(JS_ISOLATE, args[1]);
+				write(input_fd[1], *input_arg, input_arg.length()); // Write to child’s stdin
+			}
+			close(input_fd[1]);
+
+			std::string ret_out;
+			while (true) {
+				int bytes_read = (int)read(out_fd[0], buffer, MAX_BUFFER);
+				if (bytes_read == 0) {
+					break;
+				}
+				else if (bytes_read < 0) {
+					// TODO: throw JavaScript exception
+					args.GetReturnValue().SetNull();
+					return;
+				}
+				buffer[bytes_read] = 0;
+				ret_out.append(buffer);
+			}
+			close(out_fd[0]);
+
+			std::string ret_err;
+			while (true) {
+				int bytes_read = (int)read(err_fd[0], buffer, MAX_BUFFER);
+				if (bytes_read == 0) {
+					break;
+				}
+				else if (bytes_read < 0) {
+					// TODO: throw JavaScript exception
+					args.GetReturnValue().SetNull();
+					return;
+				}
+				buffer[bytes_read] = 0;
+				ret_err.append(buffer);
+			}
+			close(err_fd[0]);
+
+			int status;
+			waitpid(pid, &status, 0);
+
+			v8::Local<v8::Object> ret = v8::Object::New(JS_ISOLATE);
+			if (WIFEXITED(status)) {
+				(void)ret->Set(JS_CONTEXT, JS_STR("status"), JS_INT(WEXITSTATUS(status)));
+			}
+			else {
+				// TODO: What should we do in this case? It's not clear how to return
+				// other exit codes (for signals, for example).
+				(void)ret->Set(JS_CONTEXT, JS_STR("status"), JS_INT(-1));
+			}
+			(void)ret->Set(JS_CONTEXT, JS_STR("out"), JS_STR(ret_out.c_str()));
+			(void)ret->Set(JS_CONTEXT, JS_STR("err"), JS_STR(ret_err.c_str()));
+			args.GetReturnValue().Set(ret);
+		}
+	}
+
+	JS_METHOD(_open3) {
+		int arg_count = args.Length();
+		if (arg_count < 1 || arg_count > 3) {
+			JS_TYPE_ERROR("Wrong argument count. Use new Process().exec2(\"command\", [\"standard input\"], [\"env\"])");
+			return;
+		}
+
+		const int MAX_BUFFER = 256;
+		char buffer[MAX_BUFFER + 1];
+
+		v8::String::Utf8Value command_arg(JS_ISOLATE, args[0]);
+		v8::Object* env = NULL;
+		if (arg_count >= 3 && !((*args[2])->IsNull())) {
+			env = (*args[2]->ToObject(JS_CONTEXT).ToLocalChecked());
+		}
+
+		// File descriptors all named from perspective of child process.
+		int input_fd[2];
+		int out_fd[2];
+		int err_fd[2];
+
+		pipe(input_fd); // Where the parent is going to write to
+		pipe(out_fd); // From where parent is going to read
+		pipe(err_fd);
+
+		int pid = fork();
+		switch (pid) {
+
+		case -1:  // Error case.
+			JS_ERROR("Failed to fork process");
+			return;
+
+		case 0:  // Child process.
+
+			close(STDOUT_FILENO);
+			close(STDERR_FILENO);
+			close(STDIN_FILENO);
+
+			dup2(input_fd[0], STDIN_FILENO);
+			dup2(out_fd[1], STDOUT_FILENO);
+			dup2(err_fd[1], STDERR_FILENO);
+
+			close(input_fd[0]); // Not required for the child
+			close(input_fd[1]);
+			close(out_fd[0]);
+			close(out_fd[1]);
+			close(err_fd[0]);
+			close(err_fd[1]);
+
+			_executecommand(*command_arg, env);
 
 			args.GetReturnValue().SetNull();  // unreachable
 			return;
@@ -438,6 +577,8 @@ SHARED_INIT() {
 
 #ifndef windows
 	process->Set(JS_ISOLATE, "exec2", v8::FunctionTemplate::New(JS_ISOLATE, _exec2));
+	process->Set(JS_ISOLATE, "exec3", v8::FunctionTemplate::New(JS_ISOLATE, _exec2));
+	process->Set(JS_ISOLATE, "open3", v8::FunctionTemplate::New(JS_ISOLATE, _exec2));
 	process->Set(JS_ISOLATE, "fork", v8::FunctionTemplate::New(JS_ISOLATE, _fork));
 #endif
 
