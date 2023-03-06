@@ -117,10 +117,10 @@ namespace {
 
 			// There is no execlep so on Windows we hope that the first version works.
 			execvpe(
-				_PATH_BSHELL, argv, &env_pointers.front());
+				_PATH_BSHELL, (char* const*)argv, (char* const*)( & env_pointers.front()));
 		}
 		else {
-			execvp(_PATH_BSHELL, argv);
+			execvp(_PATH_BSHELL, (char* const*)argv);
 		}
 		exit(127);  // "command not found"
 	}
@@ -316,7 +316,7 @@ namespace {
 			close(err_fd[0]);
 			close(err_fd[1]);
 
-			_executeWithArgs(const_cast<char* const*>(argv), env);
+			_executeWithArgs(const_cast<const char**>(argv), env);
 
 			args.GetReturnValue().SetNull();  // unreachable
 			return;
