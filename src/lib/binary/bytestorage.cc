@@ -7,6 +7,7 @@
 #include "bytestorage.h"
 #include "macros.h"
 
+//#define ALLOC_ERROR throw std::string("Cannot allocate enough memory")
 #define ALLOC_ERROR JS_ERROR("Cannot allocate enough memory")
 
 #if defined windows || bsd
@@ -34,7 +35,7 @@ ByteStorageData::ByteStorageData(size_t _length,size_t _allocated_length)
 			//fprintf(stderr,"ByteStorageData::ByteStorageData() - Cannot allocate enough memory");
 			//exit(1);
 			// TODO vahvarh throw
-			ALLOC_ERROR;
+			throw std::string("Cannot allocate enough memory");
 		}
 	} else {
 		this->data = NULL;
@@ -187,7 +188,7 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 		error += " to ";
 		error += to;
 		//JS_ERROR(error.c_str());
-		JS_ERROR(error.c_str());
+		throw error;
 	}
 	
 	size_t allocated = this->length + (this->length/8) + 32; /* WAG */
@@ -254,7 +255,7 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 						break;
 					}
 					// TODO vahvarh throw
-					JS_ERROR(error.c_str());
+					throw error;
 				} break;
 			}
 		}
