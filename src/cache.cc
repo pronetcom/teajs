@@ -69,7 +69,7 @@ std::string Cache::getSource(std::string filename) {
 		s += filename;
 		s += "'";
 		// vahvarh THROW
-		throw s; 
+		JS_ERROR(s.c_str());
 	}
 	
 	fseek(file, 0, SEEK_END);
@@ -140,7 +140,7 @@ void * Cache::getHandle(std::string filename) {
 #endif
 			error += ")";
 			// vahvarh THROW
-			throw error;
+			JS_ERROR(error.c_str());
 		}
 		this->mark(filename); /* mark as cached */
 		handles[filename] = handle;

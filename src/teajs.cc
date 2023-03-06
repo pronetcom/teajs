@@ -110,16 +110,14 @@ private:
 			std::string optname(argv[index]);
 			if (optname[0] != '-') { break; } /* not starting with "-" => mainfile */
 			if (optname.length() != 2) {
-				//JS_ERROR(err.c_str());
-				throw err;
+				JS_ERROR(err.c_str());
 			} /* one-character options only */
 			index++; /* skip the option name */
 			
 			switch (optname[1]) {
 				case 'c':
 					if (index >= argc) {
-						//JS_ERROR(err.c_str());
-						throw err;
+						JS_ERROR(err.c_str());
 					} /* missing option value */
 					this->cfgfile = argv[index];		
 #ifdef VERBOSE
@@ -140,8 +138,7 @@ private:
 				
 				
 				default:
-					//JS_ERROR(err.c_str());
-					throw err;
+					JS_ERROR(err.c_str());
 				break;
 			}
 			

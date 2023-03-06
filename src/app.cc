@@ -67,7 +67,6 @@ JS_METHOD(_require) {
 		required.Reset(JS_ISOLATE, app->require(*file, root));
 		args.GetReturnValue().Set(required.Get(JS_ISOLATE));
 	} catch (std::string e) {
-		//JS_ERROR(e.c_str());
 		JS_ERROR(e.c_str());
 	}
 }
@@ -162,7 +161,7 @@ void TeaJS_App::prepare(char ** envp) {
 	if (!paths->Length()) {
 		std::string error = "require.paths is empty, have you forgotten to push some data there?";
 		// vahvarh throw
-		throw error;
+		JS_ERROR(error.c_str());
 	}
 	
 	(void)g->Set(JS_CONTEXT,JS_STR("Config"), config->Get(JS_CONTEXT,JS_STR("Config")).ToLocalChecked());
@@ -223,8 +222,8 @@ void TeaJS_App::execute(char ** envp) {
 	this->finish();
 	
 	if (caught.length()) {
-		throw caught;
-	} // rethrow
+		JS_ERROR(caught.c_str());
+	}
 }
 
 /**
@@ -265,7 +264,7 @@ v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > TeaJS_App:
 		error += name;
 		error += "'";
 		//fprintf(stderr,"%s\n",error.c_str());
-		throw error;
+		JS_ERROR(error.c_str());
 	}
 
 #ifdef VERBOSE
@@ -371,7 +370,7 @@ void TeaJS_App::load_dso(std::string filename, v8::Local<v8::Function> require, 
 		std::string error = "Cannot initialize shared library '";
 		error += filename;
 		error += "'";
-		throw error;
+		JS_ERROR(error.c_str());
 	}
 	
 	func(require, exports, module);
