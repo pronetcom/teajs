@@ -32,6 +32,7 @@ LIBS_SO =-L/usr/lib/ -L${V8_BASEDIR}/$(V8_LIBSPATH)/obj -L${V8_BASEDIR}/$(V8_LIB
 
 
 LIBS_PG=-L/usr/lib/x86_64-linux-gnu/ ${LIBPQ_LIBRARY}
+LIBS_MEMCACHED=-L/usr/lib/x86_64-linux-gnu/ ${MEMCACHED_LIBRARY}
 #LIBS_PG=-L/usr/lib/x86_64-linux-gnu/ -L/usr/lib/postgresql/13/lib -lpgport_shlib -lpgcommon_shlib ${LIBPQ_LIBRARY}
 LIBS_Z=-L/usr/lib/x86_64-linux-gnu/ -lz
 LIBS_TLS=-L/usr/lib/x86_64-linux-gnu/ -lssl -lcrypto
@@ -39,7 +40,7 @@ LIBS_GD=-L/usr/lib/x86_64-linux-gnu/ -lgd
 
 
 #all: lib/binary.so
-all: tea libtea.so lib/binary.so lib/fs.so lib/gd.so lib/process.so lib/pgsql.so lib/socket.so lib/tls.so lib/zlib.so teajs.conf lib/snapshot_blob.bin
+all: tea libtea.so lib/binary.so lib/fs.so lib/gd.so lib/process.so lib/pgsql.so lib/socket.so lib/tls.so lib/zlib.so lib/memcached.so teajs.conf lib/snapshot_blob.bin
 
 lib/snapshot_blob.bin: ${V8_COMPILEDIR}/snapshot_blob.bin
 	cp ${V8_COMPILEDIR}/snapshot_blob.bin lib/snapshot_blob.bin
@@ -108,6 +109,9 @@ lib/gd.so: src/lib/gd/gd.o
 
 lib/process.so: src/lib/process/process.o
 	$(CPP) -fPIC -o $@ -shared $^ $(LIBS_SO)
+
+lib/memcached.so: src/lib/memcached/memcached.o
+	$(CPP) -fPIC -o $@ -shared $^ $(LIBS_SO) $(LIBS_MEMCACHED)
 
 lib/socket.so: src/lib/socket/socket.o
 	$(CPP) -fPIC -o $@ -shared $^ $(LIBS_SO)
