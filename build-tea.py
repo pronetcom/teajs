@@ -18,17 +18,17 @@ def get_dependencies_list(params):
             "libraries":[]
         },
         {
-            "name":"fcgi",
-            "name_pkg_config":"fcgi",
-            "optional":0,
-            "includes_copy":["fcgiapp.h","fcgi_config.h","fcgimisc.h","fcgio.h","fcgios.h","fcgi_stdio.h"],
-            "libraries":[]
-        },
-        {
             "name":"gd",
             "name_pkg_config":"gdlib",
             "optional":0,
             "includes_copy":["gdfx.h","gd.h","gd_io.h"],
+            "libraries":[]
+        },
+        {
+            "name":"memcached",
+            "name_pkg_config":"libmemcached",
+            "optional":0,
+            "includes_copy_recursive":["libmemcached","libmemcached-1.0","libhashkit-1.0","sasl"],
             "libraries":[]
         }
     ]
@@ -167,15 +167,32 @@ def resolve_3rd_party_item(params,dep):
     copy_from=["/usr/include/"]
     if params[dep["name"].upper()+'_INCLUDE']=="":
         print("Dependency %(name)s INCLUDE path is empty, searching in /usr/include/"%dep)
-        for file in dep["includes_copy"]:
-            flag=0
-            for path in copy_from:
-                if flag==0 and os.path.exists(path+file):
-                    shutil.copyfile(path+file,"3rd-party/"+file)
-                    flag=1
-            if flag==0:
-                print("File %(file)s not found in /usr/include/ - TODO" % {"file":file})
-                exit(1)
+        if "includes_copy" in dep:
+            for file in dep["includes_copy"]:
+                flag=0
+                for path in copy_from:
+                    if flag==0 and os.path.exists(path+file):
+                        dstpath=os.path.dirname("3rd-party/"+file)
+                        os.makedirs(dstpath, exist_ok=True)
+                        shutil.copyfile(path+file,"3rd-party/"+file)
+                        flag=1
+                if flag==0:
+                    print("File %(file)s not found in /usr/include/ - TODO" % {"file":file})
+                    exit(1)
+        if "includes_copy_recursive" in dep:
+            for file in dep["includes_copy_recursive"]:
+                flag=0
+                for path in copy_from:
+                    if flag==0 and os.path.exists(path+file):
+                        dstpath="3rd-party/"+file
+                        if os.path.exists(dstpath):
+                            shutil.rmtree(dstpath)
+                        shutil.copytree(path+file,dstpath)
+                        flag=1
+                if flag==0:
+                    print("File %(file)s not found in /usr/include/ - TODO" % {"file":file})
+                    exit(1)
+
     #arr=[]
     #for file in dep["libraries"]:
     #    arr.append("-l"+file)

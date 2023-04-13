@@ -12,8 +12,9 @@
 
 namespace {
 
-void finalize(v8::Local<v8::Object> obj) {
-  memcached_st * memc = LOAD_PTR_FROM(obj, 0, memcached_st *);
+void finalize_func(void *_obj) {
+	//v8::Local<v8::Object> obj=
+	memcached_st * memc = (memcached_st*)_obj;//LOAD_PTR_FROM(obj, 0, memcached_st *);
   if (memc) {
     memcached_free(memc);
   }
@@ -32,7 +33,7 @@ JS_METHOD(_memcached) {
   memcached_st *memc = memcached_create(NULL);
   SAVE_PTR(0, memc);
   GC * gc = GC_PTR;
-  gc->add(args.This(), finalize);
+  gc->add(args.This(), finalize_func,0);
   args.GetReturnValue().Set(args.This());
 }
 
@@ -71,7 +72,7 @@ JS_METHOD(_setPrefixKey) {
     return;
   }
 
-  v8::String::Utf8Value key(args[0]);
+  v8::String::Utf8Value key(JS_ISOLATE,args[0]);
 
   memcached_return rc =
       memcached_callback_set(memc, MEMCACHED_CALLBACK_PREFIX_KEY, *key);
@@ -101,7 +102,7 @@ JS_METHOD(_getPrefixKey) {
     return;
   }
 
-  v8::LocalScope handle_scope(JS_ISOLATE);
+  v8::HandleScope handle_scope(JS_ISOLATE);
 
   v8::Local<v8::String> result = JS_STR_LEN(value, strlen(value));
 
@@ -145,9 +146,9 @@ JS_METHOD(_addServerWithWeight) {
     return;
   }
 
-  v8::String::Utf8Value host(args[0]);
-  int port = args[1]->Int32Value();
-  uint32_t weight = args[2]->Uint32Value();
+  v8::String::Utf8Value host(JS_ISOLATE,args[0]);
+  int port = args[1]->Int32Value(JS_CONTEXT).ToChecked();
+  uint32_t weight = args[2]->Uint32Value(JS_CONTEXT).ToChecked();
 
   memcached_return rc =
       memcached_server_add_with_weight(memc, *host, port, weight);
@@ -174,7 +175,7 @@ JS_METHOD(_flush) {
     return;
   }
 
-  uint32_t expiration = args[0]->Uint32Value();
+  uint32_t expiration = args[0]->Uint32Value(JS_CONTEXT).ToChecked();
 
   memcached_return rc = memcached_flush(memc, expiration);
   if (rc != MEMCACHED_SUCCESS) {
@@ -202,10 +203,10 @@ JS_METHOD(_set) {
     return;
   }
 
-  v8::String::Utf8Value key(args[0]);
-  v8::String::Utf8Value value(args[1]);
-  uint32_t expiration = args[2]->Uint32Value();
-  uint32_t flags = args[3]->Uint32Value();
+  v8::String::Utf8Value key(JS_ISOLATE,args[0]);
+  v8::String::Utf8Value value(JS_ISOLATE,args[1]);
+  uint32_t expiration = args[2]->Uint32Value(JS_CONTEXT).ToChecked();
+  uint32_t flags = args[3]->Uint32Value(JS_CONTEXT).ToChecked();
 
   memcached_return rc = memcached_set(
       memc,
@@ -237,10 +238,10 @@ JS_METHOD(_replace) {
     return;
   }
 
-  v8::String::Utf8Value key(args[0]);
-  v8::String::Utf8Value value(args[1]);
-  uint32_t expiration = args[2]->Uint32Value();
-  uint32_t flags = args[3]->Uint32Value();
+  v8::String::Utf8Value key(JS_ISOLATE,args[0]);
+  v8::String::Utf8Value value(JS_ISOLATE,args[1]);
+  uint32_t expiration = args[2]->Uint32Value(JS_CONTEXT).ToChecked();
+  uint32_t flags = args[3]->Uint32Value(JS_CONTEXT).ToChecked();
 
   memcached_return rc = memcached_replace(
       memc,
@@ -272,10 +273,10 @@ JS_METHOD(_add) {
     return;
   }
 
-  v8::String::Utf8Value key(args[0]);
-  v8::String::Utf8Value value(args[1]);
-  uint32_t expiration = args[2]->Uint32Value();
-  uint32_t flags = args[3]->Uint32Value();
+  v8::String::Utf8Value key(JS_ISOLATE,args[0]);
+  v8::String::Utf8Value value(JS_ISOLATE,args[1]);
+  uint32_t expiration = args[2]->Uint32Value(JS_CONTEXT).ToChecked();
+  uint32_t flags = args[3]->Uint32Value(JS_CONTEXT).ToChecked();
 
   memcached_return rc = memcached_add(
       memc,
@@ -311,8 +312,8 @@ JS_METHOD(_remove) {
     return;
   }
 
-  v8::String::Utf8Value key(args[0]);
-  uint32_t expiration = args[1]->Uint32Value();
+  v8::String::Utf8Value key(JS_ISOLATE,args[0]);
+  uint32_t expiration = args[1]->Uint32Value(JS_CONTEXT).ToChecked();
 
   memcached_return rc = memcached_delete(memc, *key, key.length(), expiration);
   if (rc != MEMCACHED_SUCCESS) {
@@ -339,7 +340,7 @@ JS_METHOD(_get) {
     return;
   }
 
-  v8::String::Utf8Value key(args[0]);
+  v8::String::Utf8Value key(JS_ISOLATE,args[0]);
   size_t rlength;
   uint32_t rflags;
 
@@ -353,10 +354,10 @@ JS_METHOD(_get) {
     return;
   }
 
-  v8::LocalScope handle_scope(JS_ISOLATE);
+  v8::HandleScope handle_scope(JS_ISOLATE);
   v8::Local<v8::Array> js_array = v8::Array::New(JS_ISOLATE, 2);
-  js_array->Set(JS_INT(0), JS_STR_LEN(rvalue, rlength));
-  js_array->Set(JS_INT(1), JS_INT(rflags));
+  js_array->Set(JS_CONTEXT,JS_INT(0), JS_STR_LEN(rvalue, rlength));
+  js_array->Set(JS_CONTEXT,JS_INT(1), JS_INT(rflags));
 
   free(rvalue);
 
@@ -382,24 +383,24 @@ JS_METHOD(_cas) {
     return;
   }
 
-  v8::String::Utf8Value key(args[0]);
-  v8::String::Utf8Value value(args[1]);
-  uint32_t expiration = args[2]->Uint32Value();
-  uint32_t flags = args[3]->Uint32Value();
+  v8::String::Utf8Value key(JS_ISOLATE,args[0]);
+  v8::String::Utf8Value value(JS_ISOLATE,args[1]);
+  uint32_t expiration = args[2]->Uint32Value(JS_CONTEXT).ToChecked();
+  uint32_t flags = args[3]->Uint32Value(JS_CONTEXT).ToChecked();
   v8::Local<v8::Array> arr = v8::Local<v8::Array>::Cast(args[4]);
   if (arr->Length() != 2) {
     JS_MEMCACHED_CAS_ERROR;
     return;
   }
-  v8::Local<v8::Value> arr0 = arr->Get(JS_INT(0));
-  v8::Local<v8::Value> arr1 = arr->Get(JS_INT(1));
+  v8::Local<v8::Value> arr0 = arr->Get(JS_CONTEXT,JS_INT(0)).ToLocalChecked();
+  v8::Local<v8::Value> arr1 = arr->Get(JS_CONTEXT,JS_INT(1)).ToLocalChecked();
   if (!arr0->IsInt32() ||
       !arr1->IsInt32()) {
     JS_MEMCACHED_CAS_ERROR;
     return;
   }
   uint64_t cas =
-      (((uint64_t)arr0->Uint32Value()) << 32) + ((uint64_t)arr1->Uint32Value());
+      (((uint64_t)arr0->Uint32Value(JS_CONTEXT).ToChecked()) << 32) + ((uint64_t)arr1->Uint32Value(JS_CONTEXT).ToChecked());
 
   memcached_return_t rc = memcached_cas(
       memc, *key, key.length(), *value, value.length(), expiration, flags, cas);
@@ -430,7 +431,7 @@ JS_METHOD(_mget) {
   char* keys[key_count];
   size_t key_lengths[key_count];
   for (unsigned int i = 0; i < key_count; i++) {
-    v8::Local<v8::Value> value = arr->Get(JS_INT(i));
+    v8::Local<v8::Value> value = arr->Get(JS_CONTEXT,JS_INT(i)).ToLocalChecked();
     if (!value->IsString()) {
       JS_TYPE_ERROR("Invalid arguments. All keys must be Strings.");
       return;
@@ -439,10 +440,10 @@ JS_METHOD(_mget) {
     // an array of string pointers for the memcached_mget call. There may be
     // a more efficient way of doing this that does not require new memory
     // allocation.
-    v8::Local<v8::String> string = value->ToString();
-    keys[i] = new char[string->Utf8Length()];
-    string->WriteUtf8(keys[i], string->Utf8Length());
-    key_lengths[i] = (size_t)string->Utf8Length();
+    v8::Local<v8::String> string = value->ToString(JS_CONTEXT).ToLocalChecked();
+    keys[i] = new char[string->Utf8Length(JS_ISOLATE)];
+    string->WriteUtf8(JS_ISOLATE,keys[i], string->Utf8Length(JS_ISOLATE));
+    key_lengths[i] = (size_t)string->Utf8Length(JS_ISOLATE);
   }
 
   memcached_return_t rc;
@@ -479,7 +480,7 @@ JS_METHOD(_mget) {
     }
   }
 
-  v8::LocalScope handle_scope(JS_ISOLATE);
+  v8::HandleScope handle_scope(JS_ISOLATE);
   v8::Local<v8::Array> js_array = v8::Array::New(JS_ISOLATE);
 
   // It is more efficient to use memcached_fetch_result than memcached_fetch
@@ -504,14 +505,14 @@ JS_METHOD(_mget) {
     // Encode 64bit CAS value into two 32bit integers so they do not
     // exceed the 52bit integer range of Javascript integers.
     v8::Local<v8::Array> js_cas = v8::Array::New(JS_ISOLATE, 2);
-    js_cas->Set(JS_INT(0), JS_INT(cas >> 32));
-    js_cas->Set(JS_INT(1), JS_INT(cas & 0xFFFFFFFF));
+    js_cas->Set(JS_CONTEXT,JS_INT(0), JS_INT(cas >> 32));
+    js_cas->Set(JS_CONTEXT,JS_INT(1), JS_INT(cas & 0xFFFFFFFF));
 
-    js_return_value->Set(JS_INT(0), JS_STR_LEN(return_key, return_key_length));
-    js_return_value->Set(JS_INT(1), JS_STR_LEN(return_value, return_value_length));
-    js_return_value->Set(JS_INT(2), JS_INT(flags));
-    js_return_value->Set(JS_INT(3), js_cas);
-    js_array->Set(JS_INT(i), js_return_value);
+    js_return_value->Set(JS_CONTEXT,JS_INT(0), JS_STR_LEN(return_key, return_key_length));
+    js_return_value->Set(JS_CONTEXT,JS_INT(1), JS_STR_LEN(return_value, return_value_length));
+    js_return_value->Set(JS_CONTEXT,JS_INT(2), JS_INT(flags));
+    js_return_value->Set(JS_CONTEXT,JS_INT(3), js_cas);
+    js_array->Set(JS_CONTEXT,JS_INT(i), js_return_value);
     i++;
   }
   // According to examples in the memcached tests, and my interpretation of
@@ -537,8 +538,8 @@ JS_METHOD(_behaviorSet) {
     return;
   }
 
-  memcached_behavior_t behavior = (memcached_behavior_t)args[0]->Uint32Value();
-  uint32_t data = args[1]->Uint32Value();
+  memcached_behavior_t behavior = (memcached_behavior_t)args[0]->Uint32Value(JS_CONTEXT).ToChecked();
+  uint32_t data = args[1]->Uint32Value(JS_CONTEXT).ToChecked();
 
   memcached_return_t rc = memcached_behavior_set(memc, behavior, data);
   if (rc != MEMCACHED_SUCCESS) {
@@ -558,7 +559,7 @@ JS_METHOD(_behaviorGet) {
     return;
   }
 
-  memcached_behavior_t behavior = (memcached_behavior_t)args[0]->Uint32Value();
+  memcached_behavior_t behavior = (memcached_behavior_t)args[0]->Uint32Value(JS_CONTEXT).ToChecked();
 
   uint64_t data = memcached_behavior_get(memc, behavior);
   args.GetReturnValue().Set(JS_INT(data));
@@ -567,7 +568,7 @@ JS_METHOD(_behaviorGet) {
 } /* end namespace */
 
 SHARED_INIT() {
-  v8::LocalScope handle_scope(JS_ISOLATE);
+  v8::HandleScope handle_scope(JS_ISOLATE);
   v8::Local<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(JS_ISOLATE, _memcached);
   ft->SetClassName(JS_STR("Memcached"));
 
@@ -579,61 +580,61 @@ SHARED_INIT() {
   /**
    * Memcached prototype methods (new Memcached().*)
    */
-  pt->Set(JS_CONTEXT,JS_STR("reset"), v8::FunctionTemplate::New(JS_ISOLATE, _reset));
-  pt->Set(JS_CONTEXT,JS_STR("getPrefixKey"), v8::FunctionTemplate::New(JS_ISOLATE, _getPrefixKey));
-  pt->Set(JS_CONTEXT,JS_STR("setPrefixKey"), v8::FunctionTemplate::New(JS_ISOLATE, _setPrefixKey));
-  pt->Set(JS_CONTEXT,JS_STR("clearPrefixKey"), v8::FunctionTemplate::New(JS_ISOLATE, _clearPrefixKey));
-  pt->Set(JS_CONTEXT,JS_STR("addServerWithWeight"), v8::FunctionTemplate::New(JS_ISOLATE, _addServerWithWeight));
-  pt->Set(JS_CONTEXT,JS_STR("flush"), v8::FunctionTemplate::New(JS_ISOLATE, _flush));
-  pt->Set(JS_CONTEXT,JS_STR("set"), v8::FunctionTemplate::New(JS_ISOLATE, _set));
-  pt->Set(JS_CONTEXT,JS_STR("replace"), v8::FunctionTemplate::New(JS_ISOLATE, _replace));
-  pt->Set(JS_CONTEXT,JS_STR("add"), v8::FunctionTemplate::New(JS_ISOLATE, _add));
-  pt->Set(JS_CONTEXT,JS_STR("remove"), v8::FunctionTemplate::New(JS_ISOLATE, _remove));
-  pt->Set(JS_CONTEXT,JS_STR("get"), v8::FunctionTemplate::New(JS_ISOLATE, _get));
-  pt->Set(JS_CONTEXT,JS_STR("cas"), v8::FunctionTemplate::New(JS_ISOLATE, _cas));
-  pt->Set(JS_CONTEXT,JS_STR("mget"), v8::FunctionTemplate::New(JS_ISOLATE, _mget));
-  pt->Set(JS_CONTEXT,JS_STR("behaviorSet"), v8::FunctionTemplate::New(JS_ISOLATE, _behaviorSet));
-  pt->Set(JS_CONTEXT,JS_STR("behaviorGet"), v8::FunctionTemplate::New(JS_ISOLATE, _behaviorGet));
+  pt->Set(JS_ISOLATE,"reset"				, v8::FunctionTemplate::New(JS_ISOLATE, _reset));
+  pt->Set(JS_ISOLATE,"getPrefixKey"			, v8::FunctionTemplate::New(JS_ISOLATE, _getPrefixKey));
+  pt->Set(JS_ISOLATE,"setPrefixKey"			, v8::FunctionTemplate::New(JS_ISOLATE, _setPrefixKey));
+  pt->Set(JS_ISOLATE,"clearPrefixKey"		, v8::FunctionTemplate::New(JS_ISOLATE, _clearPrefixKey));
+  pt->Set(JS_ISOLATE,"addServerWithWeight"	, v8::FunctionTemplate::New(JS_ISOLATE, _addServerWithWeight));
+  pt->Set(JS_ISOLATE,"flush"				, v8::FunctionTemplate::New(JS_ISOLATE, _flush));
+  pt->Set(JS_ISOLATE,"set"					, v8::FunctionTemplate::New(JS_ISOLATE, _set));
+  pt->Set(JS_ISOLATE,"replace"				, v8::FunctionTemplate::New(JS_ISOLATE, _replace));
+  pt->Set(JS_ISOLATE,"add"					, v8::FunctionTemplate::New(JS_ISOLATE, _add));
+  pt->Set(JS_ISOLATE,"remove"				, v8::FunctionTemplate::New(JS_ISOLATE, _remove));
+  pt->Set(JS_ISOLATE,"get"					, v8::FunctionTemplate::New(JS_ISOLATE, _get));
+  pt->Set(JS_ISOLATE,"cas"					, v8::FunctionTemplate::New(JS_ISOLATE, _cas));
+  pt->Set(JS_ISOLATE,"mget"					, v8::FunctionTemplate::New(JS_ISOLATE, _mget));
+  pt->Set(JS_ISOLATE,"behaviorSet"			, v8::FunctionTemplate::New(JS_ISOLATE, _behaviorSet));
+  pt->Set(JS_ISOLATE,"behaviorGet"			, v8::FunctionTemplate::New(JS_ISOLATE, _behaviorGet));
 
   /**
    * Memcached behavior values. These are copied from the
    * memcached_behavior_t enum in constants.h of libmemcached.
    */
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_NO_BLOCK"), JS_INT(MEMCACHED_BEHAVIOR_NO_BLOCK));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_TCP_NODELAY"), JS_INT(MEMCACHED_BEHAVIOR_TCP_NODELAY));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_HASH"), JS_INT(MEMCACHED_BEHAVIOR_HASH));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_KETAMA"), JS_INT(MEMCACHED_BEHAVIOR_KETAMA));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_SOCKET_SEND_SIZE"), JS_INT(MEMCACHED_BEHAVIOR_SOCKET_SEND_SIZE));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_SOCKET_RECV_SIZE"), JS_INT(MEMCACHED_BEHAVIOR_SOCKET_RECV_SIZE));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_CACHE_LOOKUPS"), JS_INT(MEMCACHED_BEHAVIOR_CACHE_LOOKUPS));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_SUPPORT_CAS"), JS_INT(MEMCACHED_BEHAVIOR_SUPPORT_CAS));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_POLL_TIMEOUT"), JS_INT(MEMCACHED_BEHAVIOR_POLL_TIMEOUT));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_DISTRIBUTION"), JS_INT(MEMCACHED_BEHAVIOR_DISTRIBUTION));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_BUFFER_REQUESTS"), JS_INT(MEMCACHED_BEHAVIOR_BUFFER_REQUESTS));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_USER_DATA"), JS_INT(MEMCACHED_BEHAVIOR_USER_DATA));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_SORT_HOSTS"), JS_INT(MEMCACHED_BEHAVIOR_SORT_HOSTS));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_VERIFY_KEY"), JS_INT(MEMCACHED_BEHAVIOR_VERIFY_KEY));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_CONNECT_TIMEOUT"), JS_INT(MEMCACHED_BEHAVIOR_CONNECT_TIMEOUT));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_RETRY_TIMEOUT"), JS_INT(MEMCACHED_BEHAVIOR_RETRY_TIMEOUT));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_KETAMA_WEIGHTED"), JS_INT(MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_KETAMA_HASH"), JS_INT(MEMCACHED_BEHAVIOR_KETAMA_HASH));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_BINARY_PROTOCOL"), JS_INT(MEMCACHED_BEHAVIOR_BINARY_PROTOCOL));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_SND_TIMEOUT"), JS_INT(MEMCACHED_BEHAVIOR_SND_TIMEOUT));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_RCV_TIMEOUT"), JS_INT(MEMCACHED_BEHAVIOR_RCV_TIMEOUT));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_SERVER_FAILURE_LIMIT"), JS_INT(MEMCACHED_BEHAVIOR_SERVER_FAILURE_LIMIT));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_IO_MSG_WATERMARK"), JS_INT(MEMCACHED_BEHAVIOR_IO_MSG_WATERMARK));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_IO_BYTES_WATERMARK"), JS_INT(MEMCACHED_BEHAVIOR_IO_BYTES_WATERMARK));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_IO_KEY_PREFETCH"), JS_INT(MEMCACHED_BEHAVIOR_IO_KEY_PREFETCH));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_HASH_WITH_PREFIX_KEY"), JS_INT(MEMCACHED_BEHAVIOR_HASH_WITH_PREFIX_KEY));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_NOREPLY"), JS_INT(MEMCACHED_BEHAVIOR_NOREPLY));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_USE_UDP"), JS_INT(MEMCACHED_BEHAVIOR_USE_UDP));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_AUTO_EJECT_HOSTS"), JS_INT(MEMCACHED_BEHAVIOR_AUTO_EJECT_HOSTS));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_NUMBER_OF_REPLICAS"), JS_INT(MEMCACHED_BEHAVIOR_NUMBER_OF_REPLICAS));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_RANDOMIZE_REPLICA_READ"), JS_INT(MEMCACHED_BEHAVIOR_RANDOMIZE_REPLICA_READ));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_CORK"), JS_INT(MEMCACHED_BEHAVIOR_CORK));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_TCP_KEEPALIVE"), JS_INT(MEMCACHED_BEHAVIOR_TCP_KEEPALIVE));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_TCP_KEEPIDLE"), JS_INT(MEMCACHED_BEHAVIOR_TCP_KEEPIDLE));
-  ft->Set(JS_CONTEXT,JS_STR("BEHAVIOR_MAX"), JS_INT(MEMCACHED_BEHAVIOR_MAX));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_NO_BLOCK"	, JS_INT(MEMCACHED_BEHAVIOR_NO_BLOCK));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_TCP_NODELAY"	, JS_INT(MEMCACHED_BEHAVIOR_TCP_NODELAY));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_HASH"	, JS_INT(MEMCACHED_BEHAVIOR_HASH));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_KETAMA"	, JS_INT(MEMCACHED_BEHAVIOR_KETAMA));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_SOCKET_SEND_SIZE"	, JS_INT(MEMCACHED_BEHAVIOR_SOCKET_SEND_SIZE));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_SOCKET_RECV_SIZE"	, JS_INT(MEMCACHED_BEHAVIOR_SOCKET_RECV_SIZE));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_CACHE_LOOKUPS"	, JS_INT(MEMCACHED_BEHAVIOR_CACHE_LOOKUPS));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_SUPPORT_CAS"	, JS_INT(MEMCACHED_BEHAVIOR_SUPPORT_CAS));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_POLL_TIMEOUT"	, JS_INT(MEMCACHED_BEHAVIOR_POLL_TIMEOUT));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_DISTRIBUTION"	, JS_INT(MEMCACHED_BEHAVIOR_DISTRIBUTION));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_BUFFER_REQUESTS"	, JS_INT(MEMCACHED_BEHAVIOR_BUFFER_REQUESTS));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_USER_DATA"	, JS_INT(MEMCACHED_BEHAVIOR_USER_DATA));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_SORT_HOSTS"	, JS_INT(MEMCACHED_BEHAVIOR_SORT_HOSTS));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_VERIFY_KEY"	, JS_INT(MEMCACHED_BEHAVIOR_VERIFY_KEY));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_CONNECT_TIMEOUT"	, JS_INT(MEMCACHED_BEHAVIOR_CONNECT_TIMEOUT));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_RETRY_TIMEOUT"	, JS_INT(MEMCACHED_BEHAVIOR_RETRY_TIMEOUT));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_KETAMA_WEIGHTED"	, JS_INT(MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_KETAMA_HASH"	, JS_INT(MEMCACHED_BEHAVIOR_KETAMA_HASH));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_BINARY_PROTOCOL"	, JS_INT(MEMCACHED_BEHAVIOR_BINARY_PROTOCOL));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_SND_TIMEOUT"	, JS_INT(MEMCACHED_BEHAVIOR_SND_TIMEOUT));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_RCV_TIMEOUT"	, JS_INT(MEMCACHED_BEHAVIOR_RCV_TIMEOUT));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_SERVER_FAILURE_LIMIT"	, JS_INT(MEMCACHED_BEHAVIOR_SERVER_FAILURE_LIMIT));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_IO_MSG_WATERMARK"	, JS_INT(MEMCACHED_BEHAVIOR_IO_MSG_WATERMARK));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_IO_BYTES_WATERMARK"	, JS_INT(MEMCACHED_BEHAVIOR_IO_BYTES_WATERMARK));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_IO_KEY_PREFETCH"	, JS_INT(MEMCACHED_BEHAVIOR_IO_KEY_PREFETCH));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_HASH_WITH_PREFIX_KEY"	, JS_INT(MEMCACHED_BEHAVIOR_HASH_WITH_PREFIX_KEY));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_NOREPLY"	, JS_INT(MEMCACHED_BEHAVIOR_NOREPLY));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_USE_UDP"	, JS_INT(MEMCACHED_BEHAVIOR_USE_UDP));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_AUTO_EJECT_HOSTS"	, JS_INT(MEMCACHED_BEHAVIOR_AUTO_EJECT_HOSTS));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_NUMBER_OF_REPLICAS"	, JS_INT(MEMCACHED_BEHAVIOR_NUMBER_OF_REPLICAS));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_RANDOMIZE_REPLICA_READ"	, JS_INT(MEMCACHED_BEHAVIOR_RANDOMIZE_REPLICA_READ));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_CORK"	, JS_INT(MEMCACHED_BEHAVIOR_CORK));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_TCP_KEEPALIVE"	, JS_INT(MEMCACHED_BEHAVIOR_TCP_KEEPALIVE));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_TCP_KEEPIDLE"	, JS_INT(MEMCACHED_BEHAVIOR_TCP_KEEPIDLE));
+  ft->Set(JS_ISOLATE,"BEHAVIOR_MAX"	, JS_INT(MEMCACHED_BEHAVIOR_MAX));
 
-  exports->Set(JS_CONTEXT,JS_STR("Memcached"), ft->GetFunction());
+  (void)exports->Set(JS_CONTEXT,JS_STR("Memcached"), ft->GetFunction(JS_CONTEXT).ToLocalChecked());
 }
