@@ -43,20 +43,12 @@ LIBS_TEA=-L/usr/lib/ -L${V8_BASEDIR}/$(V8_LIBSPATH)/obj -L${V8_BASEDIR}/$(V8_LIB
 LIBS_SO =-L/usr/lib/ -L${V8_BASEDIR}/$(V8_LIBSPATH)/obj -L${V8_BASEDIR}/$(V8_LIBSPATH) ${D8_LDFLAGS__} ${D8_LIBS} ${BS} -pthread -ggdb -L. $(LDFLAGS) ${FCGI_LIBRARY} -ltea -lfcgi
 
 LIBS_PG=$(LDFLAGS) ${LIBPQ_LIBRARY}
+LIBS_MEMCACHED=$(LDFLAGS) ${MEMCACHED_LIBRARY}
 LIBS_Z=$(LDFLAGS) -lz 
 LIBS_TLS=$(LDFLAGS) -lssl -lcrypto
 LIBS_GD=$(LDFLAGS) -lgd 
 
-LIBS_PG=-L/usr/lib/x86_64-linux-gnu/ ${LIBPQ_LIBRARY}
-LIBS_MEMCACHED=-L/usr/lib/x86_64-linux-gnu/ ${MEMCACHED_LIBRARY}
-#LIBS_PG=-L/usr/lib/x86_64-linux-gnu/ -L/usr/lib/postgresql/13/lib -lpgport_shlib -lpgcommon_shlib ${LIBPQ_LIBRARY}
-LIBS_Z=-L/usr/lib/x86_64-linux-gnu/ -lz
-LIBS_TLS=-L/usr/lib/x86_64-linux-gnu/ -lssl -lcrypto
-LIBS_GD=-L/usr/lib/x86_64-linux-gnu/ -lgd
-
-
 all: tea libtea$(LIB_SUFFIX) lib/binary$(LIB_SUFFIX) lib/fs$(LIB_SUFFIX) lib/gd$(LIB_SUFFIX) lib/process$(LIB_SUFFIX) lib/pgsql$(LIB_SUFFIX) lib/socket$(LIB_SUFFIX) lib/tls$(LIB_SUFFIX) lib/zlib$(LIB_SUFFIX) lib/memcached$(LIB_SUFFIX) teajs.conf lib/snapshot_blob.bin
-
 
 lib/snapshot_blob.bin: ${V8_COMPILEDIR}/snapshot_blob.bin
 	cp ${V8_COMPILEDIR}/snapshot_blob.bin lib/snapshot_blob.bin
@@ -126,14 +118,10 @@ lib/gd$(LIB_SUFFIX): src/lib/gd/gd.o libtea$(LIB_SUFFIX)
 lib/process$(LIB_SUFFIX): src/lib/process/process.o libtea$(LIB_SUFFIX)
 	$(CPP) -fPIC -o $@ -shared $^ $(LIBS_SO)
 
-<<<<<<< HEAD
-lib/socket$(LIB_SUFFIX): src/lib/socket/socket.o libtea$(LIB_SUFFIX)
-=======
-lib/memcached.so: src/lib/memcached/memcached.o
+lib/memcached$(LIB_SUFFIX): src/lib/memcached/memcached.o
 	$(CPP) -fPIC -o $@ -shared $^ $(LIBS_SO) $(LIBS_MEMCACHED)
 
-lib/socket.so: src/lib/socket/socket.o
->>>>>>> 385a428d64f8649f9ffce2f62eae89064515065c
+lib/socket$(LIB_SUFFIX): src/lib/socket/socket.o
 	$(CPP) -fPIC -o $@ -shared $^ $(LIBS_SO)
 
 lib/pgsql$(LIB_SUFFIX): src/lib/pgsql/pgsql.o libtea$(LIB_SUFFIX)

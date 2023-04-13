@@ -144,11 +144,19 @@ def get_libraries_by_path(params,dep,path):
 
 def resolve_3rd_party_item(params,dep):
     if params["resolve"]=="pkg-config":
-        params[dep["name"].upper()+'_INCLUDE']=subprocess.check_output('pkg-config --cflags '+dep["name_pkg_config"], shell=True).decode("utf-8").split("\n")[0]
-        params[dep["name"].upper()+'_LIBRARY']=subprocess.check_output('pkg-config --libs '  +dep["name_pkg_config"], shell=True).decode("utf-8").split("\n")[0]
+        try:
+            params[dep["name"].upper()+'_INCLUDE']=subprocess.check_output('pkg-config --cflags '+dep["name_pkg_config"], shell=True).decode("utf-8").split("\n")[0]
+            params[dep["name"].upper()+'_LIBRARY']=subprocess.check_output('pkg-config --libs '  +dep["name_pkg_config"], shell=True).decode("utf-8").split("\n")[0]
+        except:
+            if dep["optional"] == 1:
+                return
+            else:
+                exit(1)
     elif params["resolve"]=="brew":
         if not os.path.exists("/usr/local/opt/"+dep["name"]):
             print("Path does not exist - /usr/local/opt/"+dep["name"])
+            if dep["optional"] == 1:
+                return
             exit(1)
         params[dep["name"].upper()+'_INCLUDE']="-I/usr/local/opt/"+dep["name"]+"/include -I/usr/local/include/"
         libpath="/usr/local/opt/"+dep["name"]+"/lib"
@@ -156,11 +164,15 @@ def resolve_3rd_party_item(params,dep):
     elif params["resolve"]=="brewm":
         if not os.path.exists("/opt/homebrew/opt/"+dep["name"]):
             print("Path does not exist - /opt/homebrew/opt/"+dep["name"])
+            if dep["optional"] == 1:
+                return
             exit(1)
         params[dep["name"].upper()+'_INCLUDE']="-I/opt/homebrew/opt/"+dep["name"]+"/include -I/opt/homebrew/include/"
         libpath="/opt/homebrew/opt/"+dep["name"]+"/lib"
         params[dep["name"].upper()+'_LIBRARY']="-L"+libpath+" "+(" ".join(array_unique(get_libraries_by_path(params,dep,libpath))))
     else:
+        if dep["optional"] == 1:
+                return
         exit(1)
 
     # TODO
