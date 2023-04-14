@@ -32,7 +32,7 @@ endif
 CPP=${V8_CPP}
 
 FLAGS= $(CFLAGS) -DDSO_EXT=$(subst .,,$(LIB_SUFFIX)) -DHAVE_SLEEP -DHAVE_PTON -DHAVE_NTOP -DHAVE_MMAN_H -DFASTCGI_JS -DVERSION=${TEAJS_VERSION} \
-	${D8_DEFINES} ${D8_INCLUDE_DIRS} ${D8_CFLAGS} ${D8_CFLAGS_CC} \
+	${D8_DEFINES} ${D8_INCLUDE_DIRS} ${D8_CFLAGS} ${D8_CFLAGS_CC} -I./fcgi \
 	-I${TEAJS_BASEDIR}/src ${LIBPQ_INCLUDE} -isystem${TEAJS_BASEDIR}/3rd-party
 
 V8_LIBSPATH=out/$(arch).release/
@@ -118,10 +118,10 @@ lib/gd$(LIB_SUFFIX): src/lib/gd/gd.o libtea$(LIB_SUFFIX)
 lib/process$(LIB_SUFFIX): src/lib/process/process.o libtea$(LIB_SUFFIX)
 	$(CPP) -fPIC -o $@ -shared $^ $(LIBS_SO)
 
-lib/memcached$(LIB_SUFFIX): src/lib/memcached/memcached.o
+lib/memcached$(LIB_SUFFIX): src/lib/memcached/memcached.o libtea$(LIB_SUFFIX)
 	$(CPP) -fPIC -o $@ -shared $^ $(LIBS_SO) $(LIBS_MEMCACHED)
 
-lib/socket$(LIB_SUFFIX): src/lib/socket/socket.o
+lib/socket$(LIB_SUFFIX): src/lib/socket/socket.o libtea$(LIB_SUFFIX)
 	$(CPP) -fPIC -o $@ -shared $^ $(LIBS_SO)
 
 lib/pgsql$(LIB_SUFFIX): src/lib/pgsql/pgsql.o libtea$(LIB_SUFFIX)
