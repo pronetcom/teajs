@@ -18,6 +18,15 @@ def get_dependencies_list(params):
             "libraries":[]
         },
         {
+            "name":"fcgi",
+            "name_pkg_config":"fcgi",
+            "optional":0,
+            "includes_copy":["fcgiapp.h","fcgi_config.h","fcgimisc.h","fcgio.h","fcgios.h","fcgi_stdio.h"],
+            "libraries":[],
+            "fallback_if_no_pkg":1,
+            "ldflags":"-lfcgi",
+        },
+        {
             "name":"gd",
             "name_pkg_config":"gdlib",
             "optional":0,
@@ -27,7 +36,7 @@ def get_dependencies_list(params):
         {
             "name":"memcached",
             "name_pkg_config":"libmemcached",
-            "optional":0,
+            "optional":1,
             "includes_copy_recursive":["libmemcached","libmemcached-1.0","libhashkit-1.0","sasl"],
             "libraries":[]
         }
@@ -148,7 +157,16 @@ def resolve_3rd_party_item(params,dep):
             params[dep["name"].upper()+'_INCLUDE']=subprocess.check_output('pkg-config --cflags '+dep["name_pkg_config"], shell=True).decode("utf-8").split("\n")[0]
             params[dep["name"].upper()+'_LIBRARY']=subprocess.check_output('pkg-config --libs '  +dep["name_pkg_config"], shell=True).decode("utf-8").split("\n")[0]
         except:
-            if dep["optional"] == 1:
+            if "fallback_if_no_pkg" in dep and dep["fallback_if_no_pkg"] == 1:
+                if "cflags" in dep:
+                    params[dep["name"].upper()+'_INCLUDE']=dep["cflags"]
+                else:
+                    params[dep["name"].upper()+'_INCLUDE']=""
+                if "ldflags" in dep:
+                    params[dep["name"].upper()+'_LIBRARY']=dep["ldflags"]
+                else:
+                    params[dep["name"].upper()+'_LIBRARY']=""
+            elif dep["optional"] == 1:
                 return
             else:
                 exit(1)

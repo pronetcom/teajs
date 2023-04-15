@@ -48,7 +48,11 @@ LIBS_Z=$(LDFLAGS) -lz
 LIBS_TLS=$(LDFLAGS) -lssl -lcrypto
 LIBS_GD=$(LDFLAGS) -lgd 
 
+ifeq ($(MEMCACHED_LIBRARY),)
+all: tea libtea$(LIB_SUFFIX) lib/binary$(LIB_SUFFIX) lib/fs$(LIB_SUFFIX) lib/gd$(LIB_SUFFIX) lib/process$(LIB_SUFFIX) lib/pgsql$(LIB_SUFFIX) lib/socket$(LIB_SUFFIX) lib/tls$(LIB_SUFFIX) lib/zlib$(LIB_SUFFIX) teajs.conf lib/snapshot_blob.bin
+else
 all: tea libtea$(LIB_SUFFIX) lib/binary$(LIB_SUFFIX) lib/fs$(LIB_SUFFIX) lib/gd$(LIB_SUFFIX) lib/process$(LIB_SUFFIX) lib/pgsql$(LIB_SUFFIX) lib/socket$(LIB_SUFFIX) lib/tls$(LIB_SUFFIX) lib/zlib$(LIB_SUFFIX) lib/memcached$(LIB_SUFFIX) teajs.conf lib/snapshot_blob.bin
+endif
 
 lib/snapshot_blob.bin: ${V8_COMPILEDIR}/snapshot_blob.bin
 	cp ${V8_COMPILEDIR}/snapshot_blob.bin lib/snapshot_blob.bin
