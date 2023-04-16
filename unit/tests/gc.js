@@ -15,7 +15,7 @@ exports.testGC = function() {
 	var after_create = system.heap_statistics()['used_heap_size'];
 	system.gc();
 	var after_clean = system.heap_statistics()['used_heap_size'];
-	system.stdout.writeLine("after_create="+after_create+", after_clean="+after_clean);
+	system.stdout.writeLine("before_create=" + before_create + ", after_create=" + after_create + ", after_clean=" + after_clean);
 	assert.equal(before_create < after_create, true, "used_heap_size must be bigger after create objects");
 	assert.equal(after_clean < after_create, true, "used_heap_size must be less after system.gc()");
 }
