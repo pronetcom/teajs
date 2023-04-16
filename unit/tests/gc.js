@@ -5,6 +5,7 @@
 var assert = require("assert");
 
 exports.testGC = function() {
+	system.gc();
 	var before_create = system.heap_statistics()['used_heap_size'];
 	for (var i = 0; i < 100; i++) {
 		var arr = {};
