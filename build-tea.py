@@ -251,6 +251,7 @@ def work():
         tmp=re.search('^--(.*)',sys.argv[i])
         if tmp:
             params[tmp.group(1).upper()]=sys.argv[i+1]
+            print(tmp.group(1).upper() + " " + sys.argv[i+1])
         else:
             print("Cannot parse argument '%(arg)s'",{"arg":sys.argv[i]})
             exit(1)
