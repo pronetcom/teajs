@@ -256,7 +256,9 @@ def work():
             exit(1)
 
     params['CDIR']=os.path.dirname(os.path.realpath(__file__))
+    print(params['CDIR'])
     if 'v8' in params.keys():
+        print(params['v8'])
         params['CDIR'] = params['v8']
     params['PDIR']=re.sub('([\\\/])[^\\\/]+[\\\/]?$','',params['CDIR'])
     params['V8_BASEDIR']=params['PDIR']+"/v8_things/v8"
