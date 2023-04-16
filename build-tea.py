@@ -251,18 +251,15 @@ def work():
         tmp=re.search('^--(.*)',sys.argv[i])
         if tmp:
             params[tmp.group(1).upper()]=sys.argv[i+1]
-            print(tmp.group(1).upper() + " " + sys.argv[i+1])
         else:
             print("Cannot parse argument '%(arg)s'",{"arg":sys.argv[i]})
             exit(1)
 
     params['CDIR']=os.path.dirname(os.path.realpath(__file__))
-    print(params['CDIR'])
-    if 'v8' in params.keys():
-        print(params['v8'])
-        params['CDIR'] = params['v8']
     params['PDIR']=re.sub('([\\\/])[^\\\/]+[\\\/]?$','',params['CDIR'])
     params['V8_BASEDIR']=params['PDIR']+"/v8_things/v8"
+    if 'V8' in params.keys():
+        params['V8_BASEDIR'] = params['V8']+"/v8_things/v8"
     params['V8_COMPILEDIR']=params['V8_BASEDIR']+"/out/"+platform.machine().replace("aarch", "arm").replace("x86_64","x64")+".release";
 
     params['TEAJS_BASEDIR']=params['CDIR']
