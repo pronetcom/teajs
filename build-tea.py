@@ -6,6 +6,7 @@ import re
 import pprint
 import subprocess
 import shutil
+import platform
 
 def get_dependencies_list(params):
     return [
@@ -21,7 +22,9 @@ def get_dependencies_list(params):
             "name_pkg_config":"fcgi",
             "optional":0,
             "includes_copy":["fcgiapp.h","fcgi_config.h","fcgimisc.h","fcgio.h","fcgios.h","fcgi_stdio.h"],
-            "libraries":[]
+            "libraries":[],
+            "fallback_if_no_pkg":1,
+            "ldflags":"-lfcgi",
         },
         {
             "name":"gd",
@@ -33,12 +36,10 @@ def get_dependencies_list(params):
         {
             "name":"memcached",
             "name_pkg_config":"libmemcached",
-            "optional":0,
+            "optional":1,
             "includes_copy_recursive":["libmemcached","libmemcached-1.0","libhashkit-1.0","sasl"],
             "libraries":[]
         }
-
-
     ]
 
 # Copies params to $ENV
@@ -131,6 +132,8 @@ def resolve_3rd_parties(params):
         params["resolve"]="pkg-config"
     elif os.path.exists("/usr/local/bin/brew"):
         params["resolve"]="brew"
+    elif os.path.exists("/opt/homebrew/bin/brew"):
+        params["resolve"]="brewm"
     else:
         print("No pkg-config and no brew - TODO STOP")
         exit(1)
@@ -150,16 +153,44 @@ def get_libraries_by_path(params,dep,path):
 
 def resolve_3rd_party_item(params,dep):
     if params["resolve"]=="pkg-config":
-        params[dep["name"].upper()+'_INCLUDE']=subprocess.check_output('pkg-config --cflags '+dep["name_pkg_config"], shell=True).decode("utf-8").split("\n")[0]
-        params[dep["name"].upper()+'_LIBRARY']=subprocess.check_output('pkg-config --libs '  +dep["name_pkg_config"], shell=True).decode("utf-8").split("\n")[0]
+        try:
+            params[dep["name"].upper()+'_INCLUDE']=subprocess.check_output('pkg-config --cflags '+dep["name_pkg_config"], shell=True).decode("utf-8").split("\n")[0]
+            params[dep["name"].upper()+'_LIBRARY']=subprocess.check_output('pkg-config --libs '  +dep["name_pkg_config"], shell=True).decode("utf-8").split("\n")[0]
+        except:
+            if "fallback_if_no_pkg" in dep and dep["fallback_if_no_pkg"] == 1:
+                if "cflags" in dep:
+                    params[dep["name"].upper()+'_INCLUDE']=dep["cflags"]
+                else:
+                    params[dep["name"].upper()+'_INCLUDE']=""
+                if "ldflags" in dep:
+                    params[dep["name"].upper()+'_LIBRARY']=dep["ldflags"]
+                else:
+                    params[dep["name"].upper()+'_LIBRARY']=""
+            elif dep["optional"] == 1:
+                return
+            else:
+                exit(1)
     elif params["resolve"]=="brew":
         if not os.path.exists("/usr/local/opt/"+dep["name"]):
             print("Path does not exist - /usr/local/opt/"+dep["name"])
+            if dep["optional"] == 1:
+                return
             exit(1)
         params[dep["name"].upper()+'_INCLUDE']="-I/usr/local/opt/"+dep["name"]+"/include -I/usr/local/include/"
         libpath="/usr/local/opt/"+dep["name"]+"/lib"
         params[dep["name"].upper()+'_LIBRARY']="-L"+libpath+" "+(" ".join(array_unique(get_libraries_by_path(params,dep,libpath))))
+    elif params["resolve"]=="brewm":
+        if not os.path.exists("/opt/homebrew/opt/"+dep["name"]):
+            print("Path does not exist - /opt/homebrew/opt/"+dep["name"])
+            if dep["optional"] == 1:
+                return
+            exit(1)
+        params[dep["name"].upper()+'_INCLUDE']="-I/opt/homebrew/opt/"+dep["name"]+"/include -I/opt/homebrew/include/"
+        libpath="/opt/homebrew/opt/"+dep["name"]+"/lib"
+        params[dep["name"].upper()+'_LIBRARY']="-L"+libpath+" "+(" ".join(array_unique(get_libraries_by_path(params,dep,libpath))))
     else:
+        if dep["optional"] == 1:
+                return
         exit(1)
 
     # TODO
@@ -227,7 +258,9 @@ def work():
     params['CDIR']=os.path.dirname(os.path.realpath(__file__))
     params['PDIR']=re.sub('([\\\/])[^\\\/]+[\\\/]?$','',params['CDIR'])
     params['V8_BASEDIR']=params['PDIR']+"/v8_things/v8"
-    params['V8_COMPILEDIR']=params['V8_BASEDIR']+"/out/x64.release";
+    if 'V8' in params.keys():
+        params['V8_BASEDIR'] = params['V8']+"/v8_things/v8"
+    params['V8_COMPILEDIR']=params['V8_BASEDIR']+"/out/"+platform.machine().replace("aarch", "arm").replace("x86_64","x64")+".release";
 
     params['TEAJS_BASEDIR']=params['CDIR']
     params['TEAJS_LIBPATH']=params['TEAJS_BASEDIR']+"/lib"

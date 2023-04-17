@@ -26,6 +26,8 @@
 #define SSL_ERROR(ssl, ret) JS_ERROR(formatError(ssl, ret).c_str())
 
 namespace {
+
+bool needToCheckCertificate;
 	
 SSL_CTX * ctx;
 
@@ -102,6 +104,7 @@ JS_METHOD(_tls) {
 
 	SSL * ssl = SSL_new(ctx);
 	SSL_set_fd(ssl, LOAD_SOCKET);
+
 	SAVE_PTR(1, ssl);
 
 	GC * gc = GC_PTR;
@@ -134,6 +137,15 @@ JS_METHOD(_accept) {
 	int result = SSL_accept(ssl);
 	
 	if (result == 1) {
+		if (needToCheckCertificate) {
+			int verify_flag = (int)SSL_get_verify_result(ssl);
+			if (verify_flag != X509_V_OK) {
+				SSL_ERROR(ssl, verify_flag);
+				std::string certError = "Certificate verification error " + std::to_string((int)verify_flag) + "\n";
+				JS_ERROR(certError.c_str());
+			}
+		}
+		
 		args.GetReturnValue().Set(args.This());
 	} else if (result == -1 && SSL_get_error(ssl, result) == SSL_ERROR_WANT_READ) { /* blocking socket */
 		args.GetReturnValue().Set(JS_BOOL(false));
@@ -145,10 +157,19 @@ JS_METHOD(_accept) {
 JS_METHOD(_connect) {
 	SSL * ssl = LOAD_SSL;
 	int result = SSL_connect(ssl);
-	
 	if (result == 1) {
+		if (needToCheckCertificate) {
+			int verify_flag = (int)SSL_get_verify_result(ssl);
+			if (verify_flag != X509_V_OK) {
+				SSL_ERROR(ssl, verify_flag);
+				std::string certError = "Certificate verification error " + std::to_string((int)verify_flag) + "\n";
+				JS_ERROR(certError.c_str());
+			}
+		}
 		args.GetReturnValue().Set(args.This());
 	} else {
+		printf("%d\n", result);
+		printf(formatError(ssl, result).c_str());
 		SSL_ERROR(ssl, result);
 	}
 }
@@ -166,6 +187,14 @@ JS_METHOD(_receive) {
 				delete[] data;
 				SSL_ERROR(ssl, (int)result);
 				return;
+			}
+		}
+		if (needToCheckCertificate) {
+			int verify_flag = (int)SSL_get_verify_result(ssl);
+			if (verify_flag != X509_V_OK) {
+				SSL_ERROR(ssl, verify_flag);
+				std::string certError = "Certificate verification error " + std::to_string((int)verify_flag) + "\n";
+				JS_ERROR(certError.c_str());
 			}
 		}
 		v8::Local<v8::Value> buffer = JS_BUFFER(data, result);
@@ -207,6 +236,15 @@ JS_METHOD(_receive_strict) {
 		}
 		//printf("SSL_read() recv_cap=%d\n",recv_cap);
 		len = SSL_read(ssl, tmp, recv_cap);
+
+		if (needToCheckCertificate) {
+			int verify_flag = (int)SSL_get_verify_result(ssl);
+			if (verify_flag != X509_V_OK) {
+				SSL_ERROR(ssl, verify_flag);
+				std::string certError = "Certificate verification error " + std::to_string((int)verify_flag) + "\n";
+				JS_ERROR(certError.c_str());
+			}
+		}
 		//printf("	SSL_read() len=%d\n",len);
 
 		if (len==0) {
@@ -241,6 +279,14 @@ JS_METHOD(_send) {
 		v8::String::Utf8Value data(JS_ISOLATE,args[0]);
 		result = SSL_write(ssl, *data, data.length());
 	}
+	if (needToCheckCertificate) {
+		int verify_flag = (int)SSL_get_verify_result(ssl);
+		if (verify_flag != X509_V_OK) {
+			SSL_ERROR(ssl, verify_flag);
+			std::string certError = "Certificate verification error " + std::to_string((int)verify_flag) + "\n";
+			JS_ERROR(certError.c_str());
+		}
+	}
 	
 	if (result > 0) {
 		args.GetReturnValue().Set(args.This());
@@ -265,13 +311,57 @@ JS_METHOD(_close) {
 	}
 }
 
+JS_METHOD(_setTLSMethod) {
+	if (args.Length() < 1) { SSL_CTX_set_min_proto_version(ctx, 3); return; }
+	if (args[0]->IsUint32()) {
+		v8::Local<v8::Context> context = v8::Context::New(JS_ISOLATE);
+		v8::Maybe<uint32_t> maybe_uint = args[0]->Uint32Value(context);
+		if (maybe_uint.IsJust()) {
+			uint32_t method = maybe_uint.FromJust();
+			SSL_CTX_set_min_proto_version(ctx, method);
+		}
+		else {
+			JS_ERROR("setTLSMethod: failed conversion\n");
+		}
+	}
+	else {
+		JS_ERROR("setTLSMethod: wrong type\n");
+	}
+}
+
+JS_METHOD(_setCertificateCheck) {
+	if (args.Length() != 1) { JS_ERROR("_setCertificateCheck: wrong number of arguments"); }
+	if (args[0]->IsBooleanObject()) {
+		needToCheckCertificate = args[0]->BooleanValue(JS_ISOLATE);
+	}
+	else {
+		JS_ERROR("setTLSMethod: wrong type\n");
+	}
+}
+
+JS_METHOD(_setSNI) {
+	if (args.Length() != 1) { JS_ERROR("_setSNI: wrong number of arguments"); }
+	v8::String::Utf8Value hostname(JS_ISOLATE, args[0]);
+	SSL* ssl = LOAD_SSL;
+	SSL_set_tlsext_host_name(ssl, *hostname);
+}
+
 }
 
 SHARED_INIT() {
 	//fprintf(stderr,"tls.cc > SHARED_INIT						isolate=%ld, InContext()=%d, context=%ld\n",(void*)JS_ISOLATE,JS_ISOLATE->InContext(),(void*)(*JS_CONTEXT));
 	SSL_library_init();
 	SSL_load_error_strings();
-	ctx = SSL_CTX_new(TLS_method());
+	ctx = SSL_CTX_new(SSLv23_method());
+	// SSL_CTX_set_min_proto_version(ctx, TLS1_3_VERSION);
+	// SSL_CTX_set_cipher_list(ctx, "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256");
+	// SSL_CTX_set_cipher_list(ctx, "ALL");
+	needToCheckCertificate = true;
+
+	// if (!SSL_CTX_load_verify_locations(ctx, "/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/certs/")) {
+	if (!SSL_CTX_set_default_verify_paths(ctx)) {
+		JS_ERROR("CTX Certificate init failed\n");
+	}
 
 	v8::HandleScope handle_scope(JS_ISOLATE);//v8::LocalScope handle_scope(JS_ISOLATE);
 
@@ -286,16 +376,19 @@ SHARED_INIT() {
 	/**
 	 * Prototype methods (new TLS().*)
 	 */
-	pt->Set(JS_ISOLATE,"getSocket"			, v8::FunctionTemplate::New(JS_ISOLATE, _getSocket));
-	pt->Set(JS_ISOLATE,"verifyCertificate"	, v8::FunctionTemplate::New(JS_ISOLATE, _verifyCertificate));
-	pt->Set(JS_ISOLATE,"useCertificate"		, v8::FunctionTemplate::New(JS_ISOLATE, _useCertificate));
-	pt->Set(JS_ISOLATE,"usePrivateKey"		, v8::FunctionTemplate::New(JS_ISOLATE, _usePrivateKey));
-	pt->Set(JS_ISOLATE,"accept"				, v8::FunctionTemplate::New(JS_ISOLATE, _accept));
-	pt->Set(JS_ISOLATE,"connect"			, v8::FunctionTemplate::New(JS_ISOLATE, _connect));
-	pt->Set(JS_ISOLATE,"receive"			, v8::FunctionTemplate::New(JS_ISOLATE, _receive));
-	pt->Set(JS_ISOLATE,"receive_strict"		, v8::FunctionTemplate::New(JS_ISOLATE, _receive_strict));
-	pt->Set(JS_ISOLATE,"send"				, v8::FunctionTemplate::New(JS_ISOLATE, _send));
-	pt->Set(JS_ISOLATE,"close"				, v8::FunctionTemplate::New(JS_ISOLATE, _close));
+	pt->Set(JS_ISOLATE, "getSocket",           v8::FunctionTemplate::New(JS_ISOLATE, _getSocket));
+	pt->Set(JS_ISOLATE, "verifyCertificate",   v8::FunctionTemplate::New(JS_ISOLATE, _verifyCertificate));
+	pt->Set(JS_ISOLATE, "useCertificate",      v8::FunctionTemplate::New(JS_ISOLATE, _useCertificate));
+	pt->Set(JS_ISOLATE, "usePrivateKey",       v8::FunctionTemplate::New(JS_ISOLATE, _usePrivateKey));
+	pt->Set(JS_ISOLATE, "accept",              v8::FunctionTemplate::New(JS_ISOLATE, _accept));
+	pt->Set(JS_ISOLATE, "connect",             v8::FunctionTemplate::New(JS_ISOLATE, _connect));
+	pt->Set(JS_ISOLATE, "receive",             v8::FunctionTemplate::New(JS_ISOLATE, _receive));
+	pt->Set(JS_ISOLATE, "receive_strict",      v8::FunctionTemplate::New(JS_ISOLATE, _receive_strict));
+	pt->Set(JS_ISOLATE, "send",                v8::FunctionTemplate::New(JS_ISOLATE, _send));
+	pt->Set(JS_ISOLATE, "close",               v8::FunctionTemplate::New(JS_ISOLATE, _close));
+	pt->Set(JS_ISOLATE, "setTLSMethod",        v8::FunctionTemplate::New(JS_ISOLATE, _setTLSMethod));
+	pt->Set(JS_ISOLATE, "setCertificateCheck", v8::FunctionTemplate::New(JS_ISOLATE, _setCertificateCheck));
+	pt->Set(JS_ISOLATE, "setSNI",              v8::FunctionTemplate::New(JS_ISOLATE, _setSNI));
 
 	(void)exports->Set(JS_CONTEXT,JS_STR("TLS"), ft->GetFunction(JS_CONTEXT).ToLocalChecked());
 }
