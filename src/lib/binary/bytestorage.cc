@@ -31,6 +31,7 @@ ByteStorageData::ByteStorageData(size_t _length,size_t _allocated_length)
 	this->instances = 1;
 	if (allocated_length) {
 		this->data = (char *) malloc(this->allocated_length);
+		//JS_ISOLATE->AdjustAmountOfExternalAllocatedMemory(allocated_length);
 		if (!this->data) {
 			//fprintf(stderr,"ByteStorageData::ByteStorageData() - Cannot allocate enough memory");
 			//exit(1);
@@ -44,7 +45,10 @@ ByteStorageData::ByteStorageData(size_t _length,size_t _allocated_length)
 
 ByteStorageData::~ByteStorageData()
 {
-	if (this->data) { free(this->data); }
+	if (this->data) {
+		//JS_ISOLATE->AdjustAmountOfExternalAllocatedMemory(-allocated_length);
+		free(this->data);
+	}
 }
 	
 size_t ByteStorageData::getInstances()
@@ -71,18 +75,27 @@ size_t ByteStorageData::getAllocatedLength()
 {
 	return this->allocated_length;
 }
-void ByteStorageData::add(const char *add,size_t _length)
+void ByteStorageData::add(const char *add, size_t _length)
 {
 	//printf("ByteStorageData::add(const char *add,%d) this->length=%d,this->allocated_length=%d\n",_length,this->length,this->allocated_length);
-	if (this->length+_length>this->allocated_length) {
-		char *tmp=this->data;
-		this->allocated_length=(this->length+_length)*1.5;
+	if (this->length + _length > this->allocated_length) {
+		//JS_ISOLATE->AdjustAmountOfExternalAllocatedMemory(-allocated_length);
+		if (!this->allocated_length) {
+			this->allocated_length = 1;
+		}
+		while (this->allocated_length < this->length + _length) {
+			this->allocated_length *= 2;
+		}
+
+		char *tmp = this->data;
+		//this->allocated_length=(this->length+_length)*1.5;
 		this->data = (char *) malloc(this->allocated_length);
+		//JS_ISOLATE->AdjustAmountOfExternalAllocatedMemory(allocated_length);
 		memmove(this->data,tmp,this->length);
 		free(tmp);
 	}
 	memmove(this->data+this->length,add,_length);
-	this->length+=_length;
+	this->length += _length;
 }
 
 

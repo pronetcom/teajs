@@ -474,11 +474,13 @@ std::string TeaJS_App::format_exception(v8::TryCatch* try_catch) {
 		msgstring += ss.str();
 		msgstring += ")";
 		
-		v8::Local<v8::Value> stack = try_catch->StackTrace(JS_CONTEXT).ToLocalChecked();
-		if (!stack.IsEmpty()) {
-			v8::String::Utf8Value sstack(JS_ISOLATE,stack);
-			msgstring += "\n";
-			msgstring += *sstack;
+		if (!try_catch->StackTrace(JS_CONTEXT).IsEmpty()) {
+			v8::Local<v8::Value> stack = try_catch->StackTrace(JS_CONTEXT).ToLocalChecked();
+			if (!stack.IsEmpty()) {
+				v8::String::Utf8Value sstack(JS_ISOLATE, stack);
+				msgstring += "\n";
+				msgstring += *sstack;
+			}
 		}
 	}
 	return msgstring;

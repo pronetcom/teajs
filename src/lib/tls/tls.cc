@@ -6,6 +6,8 @@
 #include "macros.h"
 #include "common.h"
 #include <string>
+#include <iostream>
+#include <ctime>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -211,11 +213,20 @@ JS_METHOD(_receive) {
 }
 
 JS_METHOD(_receive_strict) {
+	std::cout << "C BEGIN" << std::endl;
+	time_t now = clock(), begin = clock();
+
+	JS_ISOLATE->AdjustAmountOfExternalAllocatedMemory(5141000);
+
+	std::cout << "CTIME FOR AdjustJS" << std::endl;
+	now = clock();
+
 	SSL * ssl = LOAD_SSL;
 	int count = args[0]->Int32Value(JS_CONTEXT).ToChecked();
 
 	const int TMP_BUFFER_MAX=10240;
 	char * tmp = (char*)malloc(TMP_BUFFER_MAX);
+	//JS_ISOLATE->AdjustAmountOfExternalAllocatedMemory(5141000);
 
 	ssize_t len;
 	int received=0;
@@ -223,7 +234,11 @@ JS_METHOD(_receive_strict) {
 	int flag=1;
 	int recv_cap;
 	ByteStorageData *bsd=new ByteStorageData(0,10240);
+
+
+	int iTemp = 0;
 	while (flag) {
+		iTemp++;
 		if (count==0) {
 			recv_cap=TMP_BUFFER_MAX;
 		} else {
@@ -260,9 +275,16 @@ JS_METHOD(_receive_strict) {
 		}
 	}
 	free(tmp);
+	//JS_ISOLATE->AdjustAmountOfExternalAllocatedMemory(-5141000);
+	std::cout << "CTIME FOR RECEIVE: " << (float)(clock() - now) / CLOCKS_PER_SEC << std::endl;
+	now = clock();
 	v8::Local<v8::Value> buffer = BYTESTORAGE_TO_JS(new ByteStorage(bsd));
+	std::cout << "CTIME FOR BUFFER: " << (float)(clock() - now) / CLOCKS_PER_SEC << std::endl;
+	now = clock();
 	args.GetReturnValue().Set(buffer);
-
+	std::cout << "CTIME FOR SET RETURN VALUE: " << (float)(clock() - now) / CLOCKS_PER_SEC << std::endl;
+	std::cout << "CTIME FOR TOTAL: " << (float)(clock() - begin) / CLOCKS_PER_SEC << ", ITERATIONS: " << iTemp << std::endl;
+	std::cout.flush();
 }
 
 JS_METHOD(_send) {
