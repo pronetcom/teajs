@@ -273,11 +273,12 @@ namespace {
 		char buffer[MAX_BUFFER + 1];
 
 		v8::Local<v8::Array> command_args = v8::Local<v8::Array>::Cast(args[0]);
-		char** argv = new char* [command_args->Length()];
+		const char** argv = new const char* [command_args->Length() + 1];
 		for (int i = 0; i < command_args->Length(); i++) {
 			v8::String::Utf8Value arg(JS_ISOLATE, command_args->Get(JS_CONTEXT, JS_INT(i)).ToLocalChecked()->ToString(JS_CONTEXT).ToLocalChecked());
-			argv[i] = *arg;
+			argv[i] = strdup(*arg);
 		}
+		argv[command_args->Length()] = nullptr;
 		v8::Object* env = NULL;
 		if (arg_count >= 3 && !((*args[2])->IsNull())) {
 			env = (*args[2]->ToObject(JS_CONTEXT).ToLocalChecked());
@@ -300,7 +301,6 @@ namespace {
 			return;
 
 		case 0:  // Child process.
-
 			close(STDOUT_FILENO);
 			close(STDERR_FILENO);
 			close(STDIN_FILENO);
@@ -316,12 +316,19 @@ namespace {
 			close(err_fd[0]);
 			close(err_fd[1]);
 
-			_executeWithArgs(const_cast<const char**>(argv), env);
+			_executeWithArgs(argv, env);
 
 			args.GetReturnValue().SetNull();  // unreachable
 			return;
 
 		default:  // Parent process.
+
+			for (int i = 0; i < command_args->Length(); i++) {
+				delete[] argv[i];
+			}
+			delete [] argv;
+			delete env;
+			
 
 			close(input_fd[0]); // These are being used by the child
 			close(out_fd[1]);
@@ -347,6 +354,7 @@ namespace {
 				buffer[bytes_read] = 0;
 				ret_out.append(buffer);
 			}
+
 			close(out_fd[0]);
 
 			std::string ret_err;
@@ -577,7 +585,7 @@ SHARED_INIT() {
 
 #ifndef windows
 	process->Set(JS_ISOLATE, "exec2", v8::FunctionTemplate::New(JS_ISOLATE, _exec2));
-	process->Set(JS_ISOLATE, "exec3", v8::FunctionTemplate::New(JS_ISOLATE, _exec2));
+	process->Set(JS_ISOLATE, "exec3", v8::FunctionTemplate::New(JS_ISOLATE, _exec3));
 	process->Set(JS_ISOLATE, "open3", v8::FunctionTemplate::New(JS_ISOLATE, _exec2));
 	process->Set(JS_ISOLATE, "fork", v8::FunctionTemplate::New(JS_ISOLATE, _fork));
 #endif
