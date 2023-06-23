@@ -118,8 +118,11 @@ inline void READ(FILE * stream, size_t amount, const v8::FunctionCallbackInfo<v8
 		data.insert(0, tmp, size);
 		delete[] tmp;
 	}
-	
-	args.GetReturnValue().Set(JS_BUFFER((char *) data.data(), size));
+	if (size > 0) {
+		args.GetReturnValue().Set(JS_BUFFER((char *) data.data(), size));
+		return;
+	}
+	args.GetReturnValue().Set(JS_NULL);
 }
 
 inline void READ_LINE(FILE * stream, int amount, const v8::FunctionCallbackInfo<v8::Value>& args) {

@@ -6,12 +6,16 @@
 #include <v8.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/syscall.h>
 
 #include <string>
+#include <stdio.h>
 #include <stdlib.h>
 #include "macros.h"
 #include "common.h"
 #include "path.h"
+
+#include <iostream>
 
 #include <unistd.h>
 #include <dirent.h>
@@ -115,6 +119,12 @@ JS_METHOD(_file) {
 }
 
 JS_METHOD(_open) {
+	bool debug = false;
+	if (const char* env_d = std::getenv("PRINT_DEBUGS")) {
+		if (strcmp(env_d, "1") == 0) {
+			debug = true;
+		}
+	}
 	if (args.Length() < 1) {
 		JS_TYPE_ERROR("Bad argument count. Use 'file.open(mode)'");
 		return;
@@ -128,7 +138,36 @@ JS_METHOD(_open) {
 	}
 	
 	FILE * f;
-	f = fopen(*name, *mode);
+
+	char* cName = *name;
+	bool isFd = true;
+	long fd = 0;
+	for (int i = 0; cName[i] != 0; i++) {
+		if (cName[i] < '0' || cName[i] > '9') {
+			isFd = false;
+			break;
+		}
+		fd = fd * 10 + (int)(cName[i] - '0');
+	}
+	if (isFd) {
+		if (debug) {
+			std::cout << "File descriptor!: " << atoi(cName) << " " << *mode << "\n";
+			std::cout << "fs pid: " << getpid() << "\n";
+		}
+		if (fd == -1) {
+			JS_ERROR("Cannot create fd for this process");
+			return;
+		}
+		f = fdopen(fd, *mode);
+	}
+	else {
+		if (debug) {
+			std::cout << "Not file descriptor!\n";
+		}
+		f = fopen(cName, *mode);
+	}
+
+	
 	
 	if (!f) {
 		JS_ERROR("Cannot open file");
