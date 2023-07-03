@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <vector>
+#include <fcntl.h>
 
 #include <iostream>
 #include <string>
@@ -268,7 +269,7 @@ namespace {
 
 	JS_METHOD(_exec3) {
 		int arg_count = args.Length();
-		if (arg_count < 1 || arg_count > 3) {
+		if (arg_count < 1 || arg_count > 2) {
 			JS_TYPE_ERROR("Wrong argument count. Use new Process().exec3([\"commands\"], [\"env\"])");
 			return;
 		}
@@ -309,6 +310,10 @@ namespace {
 			dup2(input_fd[0], STDIN_FILENO);
 			dup2(out_fd[1], STDOUT_FILENO);
 			dup2(err_fd[1], STDERR_FILENO);
+
+			fcntl(input_fd[0], F_SETFL, fcntl(input_fd[0], F_GETFL) | O_NONBLOCK);
+			fcntl(out_fd[1], F_SETFL, fcntl(out_fd[1], F_GETFL) | O_NONBLOCK);
+			fcntl(err_fd[1], F_SETFL, fcntl(err_fd[1], F_GETFL) | O_NONBLOCK);
 
 			close(input_fd[0]); // Not required for the child
 			close(input_fd[1]);
@@ -422,7 +427,7 @@ namespace {
 
 	JS_METHOD(_open3) {
 		int arg_count = args.Length();
-		if (arg_count < 1 || arg_count > 3) {
+		if (arg_count < 1 || arg_count > 2) {
 			JS_TYPE_ERROR("Wrong argument count. Use new Process().exec2(\"command\", [\"standard input\"], [\"env\"])");
 			return;
 		}
@@ -432,8 +437,8 @@ namespace {
 
 		v8::String::Utf8Value command_arg(JS_ISOLATE, args[0]);
 		v8::Object* env = NULL;
-		if (arg_count >= 3 && !((*args[2])->IsNull())) {
-			env = (*args[2]->ToObject(JS_CONTEXT).ToLocalChecked());
+		if (arg_count >= 2 && !((*args[1])->IsNull())) {
+			env = (*args[1]->ToObject(JS_CONTEXT).ToLocalChecked());
 		}
 
 		// File descriptors all named from perspective of child process.

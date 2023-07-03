@@ -5,6 +5,7 @@
 #define _JS_MACROS_H
 
 #include <string.h>
+#include <unistd.h>
 #include "app.h"
 #include "lib/binary/bytestorage.h"
 
@@ -125,6 +126,51 @@ inline void READ(FILE * stream, size_t amount, const v8::FunctionCallbackInfo<v8
 	args.GetReturnValue().Set(JS_NULL);
 }
 
+inline void READ_NONBLOCK(int fd, size_t amount, const v8::FunctionCallbackInfo<v8::Value>& args) {
+	v8::Local<v8::Object> ret = v8::Object::New(JS_ISOLATE);
+	std::string data;
+	size_t size = 0;
+
+   if (amount == 0) { /* all */
+		size_t tmp;
+		char * buf = new char[1024];
+		while (true) {
+			tmp = read(fd, (void *) buf, sizeof(char) * sizeof(buf));
+			if (tmp == -1) {
+				(void)ret->Set(JS_CONTEXT, JS_STR("info"), JS_INT(-1)); // need to read again
+				break;
+			}
+			else if (tmp == 0) {
+				(void)ret->Set(JS_CONTEXT, JS_STR("info"), JS_INT(0)); // don't need to read again
+				break;
+			}
+			size += tmp;
+			data.insert(data.length(), buf, tmp);
+		}
+		delete[] buf;
+	} else {
+		char * tmp = new char[amount];
+		size = read(fd, (void *) tmp, sizeof(char) * amount);
+		if (size == -1) {
+			(void)ret->Set(JS_CONTEXT, JS_STR("info"), JS_INT(-1)); // need to read again
+		}
+		else if (size == 0) {
+			(void)ret->Set(JS_CONTEXT, JS_STR("info"), JS_INT(0)); // don't need to read again
+		}
+		else {
+			data.insert(0, tmp, size);
+		}
+		delete[] tmp;
+	}
+	//if (size > 0) {
+	(void)ret->Set(JS_CONTEXT, JS_STR("result"), JS_BUFFER((char *) data.data(), size));
+	(void)ret->Set(JS_CONTEXT, JS_STR("size"), JS_INT(size));
+	args.GetReturnValue().Set(ret);
+	return;
+	//}
+	//args.GetReturnValue().Set(JS_NULL);
+}
+
 inline void READ_LINE(FILE * stream, int amount, const v8::FunctionCallbackInfo<v8::Value>& args) {
 	char * buf = new char[amount];
 	v8::Local<v8::Value> result;
@@ -144,10 +190,14 @@ inline size_t WRITE(FILE * stream, v8::Local<v8::Value> data) {
 	if (IS_BUFFER(data)) {
 		size_t size = 0;
 		char * cdata = JS_BUFFER_TO_CHAR(data, &size);
-		return fwrite(cdata, sizeof(char), size, stream);
+		int result = fwrite(cdata, sizeof(char), size, stream);
+		fflush(stream);
+		return result;
 	} else {
 		v8::String::Utf8Value utfdata(JS_ISOLATE,data);
-		return fwrite(*utfdata, sizeof(char), utfdata.length(), stream);
+		int result = fwrite(*utfdata, sizeof(char), utfdata.length(), stream);
+		fflush(stream);
+		return result;
 	}
 }
 
