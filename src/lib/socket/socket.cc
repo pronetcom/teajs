@@ -401,6 +401,26 @@ JS_METHOD(_select) {
 	args.GetReturnValue().Set(JS_INT(ret));
 }
 
+JS_METHOD(_makeNonblock) {
+	if (args.Length() != 1) {
+		JS_TYPE_ERROR("Bad argument count. Socket.select must be called with 4 arguments.");
+		return;
+	}
+	v8::String::Utf8Value str(JS_ISOLATE, args[0]);
+	char* cName = *str;
+	bool isFd = true;
+	long fd = 0;
+	for (int i = 0; cName[i] != 0; i++) {
+		if (cName[i] < '0' || cName[i] > '9') {
+			isFd = false;
+			break;
+		}
+		fd = fd * 10 + (int)(cName[i] - '0');
+	}
+	if (!isFd) { JS_ERROR("Argument must be a descriptor"); return; }
+	args.GetReturnValue().Set(JS_INT(fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)));
+}
+
 JS_METHOD(_connect) {
 	int family = args.This()->Get(JS_CONTEXT,JS_STR("family")).ToLocalChecked()->Int32Value(JS_CONTEXT).ToChecked();
 	int sock = LOAD_VALUE(0)->Int32Value(JS_CONTEXT).ToChecked();
@@ -762,6 +782,7 @@ SHARED_INIT() {
 	socketTemplate->Set(JS_ISOLATE,"getNameInfo"	, v8::FunctionTemplate::New(JS_ISOLATE, _getnameinfo));
 	socketTemplate->Set(JS_ISOLATE,"getHostName"	, v8::FunctionTemplate::New(JS_ISOLATE, _gethostname));
 	socketTemplate->Set(JS_ISOLATE,"select"			, v8::FunctionTemplate::New(JS_ISOLATE, _select));
+	socketTemplate->Set(JS_ISOLATE,"makeNonblock"   , v8::FunctionTemplate::New(JS_ISOLATE, _makeNonblock));
 	/*socketTemplate->Set(JS_ISOLATE,"getProtoByName"	, v8::FunctionTemplate::New(JS_ISOLATE, _getprotobyname)->GetFunction(JS_CONTEXT).ToLocalChecked());
 	socketTemplate->Set(JS_ISOLATE,"getProtoByName"	, v8::FunctionTemplate::New(JS_ISOLATE, _getprotobyname));
 	socketTemplate->Set(JS_ISOLATE,"getAddrInfo"	, v8::FunctionTemplate::New(JS_ISOLATE, _getaddrinfo)->GetFunction(JS_CONTEXT).ToLocalChecked());

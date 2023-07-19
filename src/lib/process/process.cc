@@ -9,6 +9,11 @@
 #include "common.h"
 #include <stdlib.h>
 #include <unistd.h>
+#include <vector>
+#include <fcntl.h>
+
+#include <iostream>
+#include <string>
 
 #ifndef windows
 #  include <sys/wait.h>
@@ -117,10 +122,10 @@ namespace {
 
 			// There is no execlep so on Windows we hope that the first version works.
 			execvpe(
-				_PATH_BSHELL, (char* const*)argv, (char* const*)( & env_pointers.front()));
+				argv[0], (char* const*)argv, (char* const*)(&env_pointers.front()));
 		}
 		else {
-			execvp(_PATH_BSHELL, (char* const*)argv);
+			execvp(argv[0], (char* const*)argv);
 		}
 		exit(127);  // "command not found"
 	}
@@ -264,8 +269,8 @@ namespace {
 
 	JS_METHOD(_exec3) {
 		int arg_count = args.Length();
-		if (arg_count < 1 || arg_count > 3) {
-			JS_TYPE_ERROR("Wrong argument count. Use new Process().exec3([\"commands\"], [\"standard input\"], [\"env\"])");
+		if (arg_count < 1 || arg_count > 2) {
+			JS_TYPE_ERROR("Wrong argument count. Use new Process().exec3([\"commands\"], [\"env\"])");
 			return;
 		}
 
@@ -280,8 +285,8 @@ namespace {
 		}
 		argv[command_args->Length()] = nullptr;
 		v8::Object* env = NULL;
-		if (arg_count >= 3 && !((*args[2])->IsNull())) {
-			env = (*args[2]->ToObject(JS_CONTEXT).ToLocalChecked());
+		if (arg_count >= 2 && !((*args[1])->IsNull())) {
+			env = (*args[1]->ToObject(JS_CONTEXT).ToLocalChecked());
 		}
 
 		// File descriptors all named from perspective of child process.
@@ -301,13 +306,14 @@ namespace {
 			return;
 
 		case 0:  // Child process.
-			close(STDOUT_FILENO);
-			close(STDERR_FILENO);
-			close(STDIN_FILENO);
 
 			dup2(input_fd[0], STDIN_FILENO);
 			dup2(out_fd[1], STDOUT_FILENO);
 			dup2(err_fd[1], STDERR_FILENO);
+
+			fcntl(input_fd[0], F_SETFL, fcntl(input_fd[0], F_GETFL) | O_NONBLOCK);
+			fcntl(out_fd[1], F_SETFL, fcntl(out_fd[1], F_GETFL) | O_NONBLOCK);
+			fcntl(err_fd[1], F_SETFL, fcntl(err_fd[1], F_GETFL) | O_NONBLOCK);
 
 			close(input_fd[0]); // Not required for the child
 			close(input_fd[1]);
@@ -334,49 +340,66 @@ namespace {
 			close(out_fd[1]);
 			close(err_fd[1]);
 
+			/*
 			if (arg_count >= 2) {
 				v8::String::Utf8Value input_arg(JS_ISOLATE, args[1]);
+				/*
+				uint32_t fd = args[1]->Uint32Value(v8::Context::New(JS_ISOLATE)).FromJust();
+				while (true) {
+					int bytes_read = (int)read(fd, buffer, MAX_BUFFER);
+					if (bytes_read == 0) {
+						break;
+					}
+					else if (bytes_read < 0) {
+						// TODO: throw JavaScript exception
+						args.GetReturnValue().SetNull();
+						return;
+					}
+					buffer[bytes_read] = 0;
+					write(input_fd[1], buffer, bytes_read);
+				}
+				* /
 				write(input_fd[1], *input_arg, input_arg.length()); // Write to child’s stdin
 			}
 			close(input_fd[1]);
 
-			std::string ret_out;
+			std::vector<char> ret_out;
 			while (true) {
 				int bytes_read = (int)read(out_fd[0], buffer, MAX_BUFFER);
 				if (bytes_read == 0) {
 					break;
 				}
 				else if (bytes_read < 0) {
-					// TODO: throw JavaScript exception
 					args.GetReturnValue().SetNull();
 					return;
 				}
 				buffer[bytes_read] = 0;
-				ret_out.append(buffer);
+				ret_out.insert(ret_out.end(), buffer, buffer + bytes_read);
 			}
 
 			close(out_fd[0]);
 
-			std::string ret_err;
+			std::vector<char> ret_err;
 			while (true) {
 				int bytes_read = (int)read(err_fd[0], buffer, MAX_BUFFER);
 				if (bytes_read == 0) {
 					break;
 				}
 				else if (bytes_read < 0) {
-					// TODO: throw JavaScript exception
 					args.GetReturnValue().SetNull();
 					return;
 				}
 				buffer[bytes_read] = 0;
-				ret_err.append(buffer);
+				ret_err.insert(ret_err.end(), buffer, buffer + bytes_read);
 			}
 			close(err_fd[0]);
 
 			int status;
 			waitpid(pid, &status, 0);
+			*/
 
 			v8::Local<v8::Object> ret = v8::Object::New(JS_ISOLATE);
+			/*
 			if (WIFEXITED(status)) {
 				(void)ret->Set(JS_CONTEXT, JS_STR("status"), JS_INT(WEXITSTATUS(status)));
 			}
@@ -387,13 +410,24 @@ namespace {
 			}
 			(void)ret->Set(JS_CONTEXT, JS_STR("out"), JS_STR(ret_out.c_str()));
 			(void)ret->Set(JS_CONTEXT, JS_STR("err"), JS_STR(ret_err.c_str()));
+			*/
+			std::string strIn = "", strOut = "", strErr = "";
+			strIn += std::to_string(input_fd[1]);
+			(void)ret->Set(JS_CONTEXT, JS_STR("in"), JS_STR(strIn.c_str()));
+			
+			strOut += std::to_string(out_fd[0]);
+			(void)ret->Set(JS_CONTEXT, JS_STR("out"), JS_STR(strOut.c_str()));
+			
+			strErr += std::to_string(err_fd[0]);
+			(void)ret->Set(JS_CONTEXT, JS_STR("err"), JS_STR(strErr.c_str()));
+			
 			args.GetReturnValue().Set(ret);
 		}
 	}
 
 	JS_METHOD(_open3) {
 		int arg_count = args.Length();
-		if (arg_count < 1 || arg_count > 3) {
+		if (arg_count < 1 || arg_count > 2) {
 			JS_TYPE_ERROR("Wrong argument count. Use new Process().exec2(\"command\", [\"standard input\"], [\"env\"])");
 			return;
 		}
@@ -403,8 +437,8 @@ namespace {
 
 		v8::String::Utf8Value command_arg(JS_ISOLATE, args[0]);
 		v8::Object* env = NULL;
-		if (arg_count >= 3 && !((*args[2])->IsNull())) {
-			env = (*args[2]->ToObject(JS_CONTEXT).ToLocalChecked());
+		if (arg_count >= 2 && !((*args[1])->IsNull())) {
+			env = (*args[1]->ToObject(JS_CONTEXT).ToLocalChecked());
 		}
 
 		// File descriptors all named from perspective of child process.

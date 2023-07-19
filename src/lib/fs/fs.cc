@@ -6,12 +6,16 @@
 #include <v8.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/syscall.h>
 
 #include <string>
+#include <stdio.h>
 #include <stdlib.h>
 #include "macros.h"
 #include "common.h"
 #include "path.h"
+
+#include <iostream>
 
 #include <unistd.h>
 #include <dirent.h>
@@ -115,6 +119,12 @@ JS_METHOD(_file) {
 }
 
 JS_METHOD(_open) {
+	bool debug = false;
+	if (const char* env_d = std::getenv("PRINT_DEBUGS")) {
+		if (strcmp(env_d, "1") == 0) {
+			debug = true;
+		}
+	}
 	if (args.Length() < 1) {
 		JS_TYPE_ERROR("Bad argument count. Use 'file.open(mode)'");
 		return;
@@ -128,7 +138,36 @@ JS_METHOD(_open) {
 	}
 	
 	FILE * f;
-	f = fopen(*name, *mode);
+
+	char* cName = *name;
+	bool isFd = true;
+	long fd = 0;
+	for (int i = 0; cName[i] != 0; i++) {
+		if (cName[i] < '0' || cName[i] > '9') {
+			isFd = false;
+			break;
+		}
+		fd = fd * 10 + (int)(cName[i] - '0');
+	}
+	if (isFd) {
+		if (debug) {
+			std::cout << "File descriptor!: " << atoi(cName) << " " << *mode << "\n";
+			std::cout << "fs pid: " << getpid() << "\n";
+		}
+		if (fd == -1) {
+			JS_ERROR("Cannot create fd for this process");
+			return;
+		}
+		f = fdopen(fd, *mode);
+	}
+	else {
+		if (debug) {
+			std::cout << "Not file descriptor!\n";
+		}
+		f = fopen(cName, *mode);
+	}
+
+	
 	
 	if (!f) {
 		JS_ERROR("Cannot open file");
@@ -183,6 +222,73 @@ JS_METHOD(_read) {
 	}
 	
 	READ(f, count, args);
+}
+
+JS_METHOD(_ftell) {
+	v8::Local<v8::Value> file = LOAD_VALUE(1);
+
+	if (file->IsFalse()) {
+		JS_ERROR("File must be opened before using ftell");
+		return;
+	}
+	FILE* f = LOAD_PTR(1, FILE*);
+
+	args.GetReturnValue().Set(JS_INT(std::ftell(f)));
+}
+
+JS_METHOD(_fseek) {
+	v8::Local<v8::Value> file = LOAD_VALUE(1);
+
+	if (file->IsFalse()) {
+		JS_ERROR("File must be opened before using fseek");
+		return;
+	}
+	if (args.Length() < 1) {
+		JS_ERROR("Too few arguments");
+		return;
+	}
+	if (args.Length() > 2) {
+		JS_ERROR("Too many arguments");
+		return;
+	}
+	FILE* f = LOAD_PTR(1, FILE*);
+
+	size_t pos = 0, origin = 0;
+	if (args[0]->IsNumber()) {
+		pos = args[0]->IntegerValue(JS_CONTEXT).ToChecked();
+	}
+	else {
+		JS_ERROR("Non-integer first argument");
+		return;
+	}
+	if (args.Length() > 1) {
+		if (args[1]->IsNumber()) {
+			origin = args[1]->IntegerValue(JS_CONTEXT).ToChecked();
+		}
+		else {
+			JS_ERROR("Non-integer second argument");
+			return;
+		}
+	}
+
+	args.GetReturnValue().Set(JS_INT(std::fseek(f, pos, origin)));
+}
+
+JS_METHOD(_readNonblock) {
+	v8::Local<v8::Value> file = LOAD_VALUE(1);
+
+	if (file->IsFalse()) {
+		JS_ERROR("File must be opened before reading");
+		return;
+	}
+	FILE* f = LOAD_PTR(1, FILE*);
+
+	size_t count = 0;
+	if (args.Length() && args[0]->IsNumber()) {
+		count = args[0]->IntegerValue(JS_CONTEXT).ToChecked();
+	}
+
+	READ_NONBLOCK(fileno(f), count, args);
 }
 
 JS_METHOD(_readline) {
@@ -376,22 +482,25 @@ SHARED_INIT() {
 	/**
 	 * File prototype methods (new File().*)
 	 */
-	pt->Set(JS_ISOLATE,"open"		, v8::FunctionTemplate::New(JS_ISOLATE, _open));
-	pt->Set(JS_ISOLATE,"read"		, v8::FunctionTemplate::New(JS_ISOLATE, _read));
-	pt->Set(JS_ISOLATE,"readLine"	, v8::FunctionTemplate::New(JS_ISOLATE, _readline));
-	pt->Set(JS_ISOLATE,"rewind"		, v8::FunctionTemplate::New(JS_ISOLATE, _rewind));
-	pt->Set(JS_ISOLATE,"close"		, v8::FunctionTemplate::New(JS_ISOLATE, _close));
-	pt->Set(JS_ISOLATE,"flush"		, v8::FunctionTemplate::New(JS_ISOLATE, _flush));
-	pt->Set(JS_ISOLATE,"write"		, v8::FunctionTemplate::New(JS_ISOLATE, _write));
-	pt->Set(JS_ISOLATE,"writeLine"	, v8::FunctionTemplate::New(JS_ISOLATE, _writeline));
-	pt->Set(JS_ISOLATE,"remove"		, v8::FunctionTemplate::New(JS_ISOLATE, _removefile));
-	pt->Set(JS_ISOLATE,"toString"	, v8::FunctionTemplate::New(JS_ISOLATE, _tostring));
-	pt->Set(JS_ISOLATE,"exists"		, v8::FunctionTemplate::New(JS_ISOLATE, _exists));
-	pt->Set(JS_ISOLATE,"move"		, v8::FunctionTemplate::New(JS_ISOLATE, _movefile));
-	pt->Set(JS_ISOLATE,"copy"		, v8::FunctionTemplate::New(JS_ISOLATE, _copyfile));
-	pt->Set(JS_ISOLATE,"stat"		, v8::FunctionTemplate::New(JS_ISOLATE, _stat));
-	pt->Set(JS_ISOLATE,"isFile"		, v8::FunctionTemplate::New(JS_ISOLATE, _isfile));
-	pt->Set(JS_ISOLATE,"isEOF"		, v8::FunctionTemplate::New(JS_ISOLATE, _iseof));
+	pt->Set(JS_ISOLATE,"open"		 , v8::FunctionTemplate::New(JS_ISOLATE, _open));
+	pt->Set(JS_ISOLATE,"read"		 , v8::FunctionTemplate::New(JS_ISOLATE, _read));
+	pt->Set(JS_ISOLATE,"ftell"       , v8::FunctionTemplate::New(JS_ISOLATE, _ftell));
+	pt->Set(JS_ISOLATE,"fseek"       , v8::FunctionTemplate::New(JS_ISOLATE, _fseek));
+	pt->Set(JS_ISOLATE,"readNonblock", v8::FunctionTemplate::New(JS_ISOLATE, _readNonblock));
+	pt->Set(JS_ISOLATE,"readLine"	 , v8::FunctionTemplate::New(JS_ISOLATE, _readline));
+	pt->Set(JS_ISOLATE,"rewind"		 , v8::FunctionTemplate::New(JS_ISOLATE, _rewind));
+	pt->Set(JS_ISOLATE,"close"		 , v8::FunctionTemplate::New(JS_ISOLATE, _close));
+	pt->Set(JS_ISOLATE,"flush"		 , v8::FunctionTemplate::New(JS_ISOLATE, _flush));
+	pt->Set(JS_ISOLATE,"write"		 , v8::FunctionTemplate::New(JS_ISOLATE, _write));
+	pt->Set(JS_ISOLATE,"writeLine"	 , v8::FunctionTemplate::New(JS_ISOLATE, _writeline));
+	pt->Set(JS_ISOLATE,"remove"		 , v8::FunctionTemplate::New(JS_ISOLATE, _removefile));
+	pt->Set(JS_ISOLATE,"toString"	 , v8::FunctionTemplate::New(JS_ISOLATE, _tostring));
+	pt->Set(JS_ISOLATE,"exists"		 , v8::FunctionTemplate::New(JS_ISOLATE, _exists));
+	pt->Set(JS_ISOLATE,"move"		 , v8::FunctionTemplate::New(JS_ISOLATE, _movefile));
+	pt->Set(JS_ISOLATE,"copy"		 , v8::FunctionTemplate::New(JS_ISOLATE, _copyfile));
+	pt->Set(JS_ISOLATE,"stat"		 , v8::FunctionTemplate::New(JS_ISOLATE, _stat));
+	pt->Set(JS_ISOLATE,"isFile"		 , v8::FunctionTemplate::New(JS_ISOLATE, _isfile));
+	pt->Set(JS_ISOLATE,"isEOF"		 , v8::FunctionTemplate::New(JS_ISOLATE, _iseof));
 
 
 	(void)exports->Set(JS_CONTEXT,JS_STR("File"), ft->GetFunction(JS_CONTEXT).ToLocalChecked());			
