@@ -224,6 +224,56 @@ JS_METHOD(_read) {
 	READ(f, count, args);
 }
 
+JS_METHOD(_ftell) {
+	v8::Local<v8::Value> file = LOAD_VALUE(1);
+
+	if (file->IsFalse()) {
+		JS_ERROR("File must be opened before using ftell");
+		return;
+	}
+	FILE* f = LOAD_PTR(1, FILE*);
+
+	args.GetReturnValue().Set(JS_INT(std::ftell(f)));
+}
+
+JS_METHOD(_fseek) {
+	v8::Local<v8::Value> file = LOAD_VALUE(1);
+
+	if (file->IsFalse()) {
+		JS_ERROR("File must be opened before using fseek");
+		return;
+	}
+	if (args.Length() < 1) {
+		JS_ERROR("Too few arguments");
+		return;
+	}
+	if (args.Length() > 2) {
+		JS_ERROR("Too many arguments");
+		return;
+	}
+	FILE* f = LOAD_PTR(1, FILE*);
+
+	size_t pos = 0, origin = 0;
+	if (args[0]->IsNumber()) {
+		pos = args[0]->IntegerValue(JS_CONTEXT).ToChecked();
+	}
+	else {
+		JS_ERROR("Non-integer first argument");
+		return;
+	}
+	if (args.Length() > 1) {
+		if (args[1]->IsNumber()) {
+			origin = args[1]->IntegerValue(JS_CONTEXT).ToChecked();
+		}
+		else {
+			JS_ERROR("Non-integer second argument");
+			return;
+		}
+	}
+
+	args.GetReturnValue().Set(JS_INT(std::fseek(f, pos, origin)));
+}
+
 JS_METHOD(_readNonblock) {
 	v8::Local<v8::Value> file = LOAD_VALUE(1);
 
@@ -434,6 +484,8 @@ SHARED_INIT() {
 	 */
 	pt->Set(JS_ISOLATE,"open"		 , v8::FunctionTemplate::New(JS_ISOLATE, _open));
 	pt->Set(JS_ISOLATE,"read"		 , v8::FunctionTemplate::New(JS_ISOLATE, _read));
+	pt->Set(JS_ISOLATE,"ftell"       , v8::FunctionTemplate::New(JS_ISOLATE, _ftell));
+	pt->Set(JS_ISOLATE,"fseek"       , v8::FunctionTemplate::New(JS_ISOLATE, _fseek));
 	pt->Set(JS_ISOLATE,"readNonblock", v8::FunctionTemplate::New(JS_ISOLATE, _readNonblock));
 	pt->Set(JS_ISOLATE,"readLine"	 , v8::FunctionTemplate::New(JS_ISOLATE, _readline));
 	pt->Set(JS_ISOLATE,"rewind"		 , v8::FunctionTemplate::New(JS_ISOLATE, _rewind));

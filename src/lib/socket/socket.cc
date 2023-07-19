@@ -418,7 +418,7 @@ JS_METHOD(_makeNonblock) {
 		fd = fd * 10 + (int)(cName[i] - '0');
 	}
 	if (!isFd) { JS_ERROR("Argument must be a descriptor"); return; }
-	fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
+	args.GetReturnValue().Set(JS_INT(fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)));
 }
 
 JS_METHOD(_connect) {
@@ -782,7 +782,7 @@ SHARED_INIT() {
 	socketTemplate->Set(JS_ISOLATE,"getNameInfo"	, v8::FunctionTemplate::New(JS_ISOLATE, _getnameinfo));
 	socketTemplate->Set(JS_ISOLATE,"getHostName"	, v8::FunctionTemplate::New(JS_ISOLATE, _gethostname));
 	socketTemplate->Set(JS_ISOLATE,"select"			, v8::FunctionTemplate::New(JS_ISOLATE, _select));
-	socketTemplate->Set(JS_ISOLATE,"makeNonblock"       , v8::FunctionTemplate::New(JS_ISOLATE, _makeNonblock));
+	socketTemplate->Set(JS_ISOLATE,"makeNonblock"   , v8::FunctionTemplate::New(JS_ISOLATE, _makeNonblock));
 	/*socketTemplate->Set(JS_ISOLATE,"getProtoByName"	, v8::FunctionTemplate::New(JS_ISOLATE, _getprotobyname)->GetFunction(JS_CONTEXT).ToLocalChecked());
 	socketTemplate->Set(JS_ISOLATE,"getProtoByName"	, v8::FunctionTemplate::New(JS_ISOLATE, _getprotobyname));
 	socketTemplate->Set(JS_ISOLATE,"getAddrInfo"	, v8::FunctionTemplate::New(JS_ISOLATE, _getaddrinfo)->GetFunction(JS_CONTEXT).ToLocalChecked());
