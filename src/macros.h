@@ -119,11 +119,8 @@ inline void READ(FILE * stream, size_t amount, const v8::FunctionCallbackInfo<v8
 		data.insert(0, tmp, size);
 		delete[] tmp;
 	}
-	if (size > 0) {
-		args.GetReturnValue().Set(JS_BUFFER((char *) data.data(), size));
-		return;
-	}
-	args.GetReturnValue().Set(JS_NULL);
+	args.GetReturnValue().Set(JS_BUFFER((char *) data.data(), size));
+	return;
 }
 
 inline void READ_NONBLOCK(int fd, size_t amount, const v8::FunctionCallbackInfo<v8::Value>& args) {

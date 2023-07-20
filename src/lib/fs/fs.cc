@@ -484,8 +484,8 @@ SHARED_INIT() {
 	 */
 	pt->Set(JS_ISOLATE,"open"		 , v8::FunctionTemplate::New(JS_ISOLATE, _open));
 	pt->Set(JS_ISOLATE,"read"		 , v8::FunctionTemplate::New(JS_ISOLATE, _read));
-	pt->Set(JS_ISOLATE,"ftell"       , v8::FunctionTemplate::New(JS_ISOLATE, _ftell));
-	pt->Set(JS_ISOLATE,"fseek"       , v8::FunctionTemplate::New(JS_ISOLATE, _fseek));
+	pt->Set(JS_ISOLATE,"tell"        , v8::FunctionTemplate::New(JS_ISOLATE, _ftell));
+	pt->Set(JS_ISOLATE,"seek"        , v8::FunctionTemplate::New(JS_ISOLATE, _fseek));
 	pt->Set(JS_ISOLATE,"readNonblock", v8::FunctionTemplate::New(JS_ISOLATE, _readNonblock));
 	pt->Set(JS_ISOLATE,"readLine"	 , v8::FunctionTemplate::New(JS_ISOLATE, _readline));
 	pt->Set(JS_ISOLATE,"rewind"		 , v8::FunctionTemplate::New(JS_ISOLATE, _rewind));
