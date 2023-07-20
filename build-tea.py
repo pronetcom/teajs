@@ -255,8 +255,8 @@ def work():
             print("Cannot parse argument '%(arg)s'",{"arg":sys.argv[i]})
             exit(1)
 
-    params['CDIR']=os.path.dirname(os.path.realpath(__file__))
-    params['PDIR']=re.sub('([\\\/])[^\\\/]+[\\\/]?$','',params['CDIR'])
+    params['CDIR']="."#os.path.dirname(os.path.realpath(__file__))
+    params['PDIR']="./../"#re.sub('([\\\/])[^\\\/]+[\\\/]?$','',params['CDIR'])
     params['V8_BASEDIR']=params['PDIR']+"/v8_things/v8"
     if 'V8' in params.keys():
         params['V8_BASEDIR'] = params['V8']+"/v8_things/v8"
