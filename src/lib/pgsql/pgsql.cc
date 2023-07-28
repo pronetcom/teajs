@@ -209,7 +209,7 @@ v8::Local<v8::Array> fetch_any(PGresult *res,int lineno,bool fetch_objects)
 		if (len > 0) {
 			v8::Local<v8::Value> * fargs = new v8::Local<v8::Value>[len];
 			for (uint32_t i=0;i<len;i++) {
-	fargs[i] = args[i];
+				fargs[i] = args[i];
 			}
 			v8::Local<v8::Value> f = args.This()->Get(JS_CONTEXT,JS_STR("connect")).ToLocalChecked();
 			v8::Local<v8::Function> connect = v8::Local<v8::Function>::Cast(f);
@@ -225,7 +225,8 @@ v8::Local<v8::Array> fetch_any(PGresult *res,int lineno,bool fetch_objects)
 			v8::Local<v8::Value> ret = ml_ret.ToLocalChecked();
 			delete[] fargs;
 			args.GetReturnValue().Set(ret);
-		} else {
+		}
+		else {
 			args.GetReturnValue().Set(args.This());
 		}
 	}
@@ -257,56 +258,56 @@ v8::Local<v8::Array> fetch_any(PGresult *res,int lineno,bool fetch_objects)
 		char * tconnstr = new char[max];
 		if (args.Length() == 1) {
 			if (args[0]->IsString()) {
-	v8::String::Utf8Value connstr(JS_ISOLATE,args[0]);
-	conn = PQconnectdb(*connstr);
+				v8::String::Utf8Value connstr(JS_ISOLATE,args[0]);
+				conn = PQconnectdb(*connstr);
 			}
 			else if (args[0]->IsArray()) {
-	v8::Local<v8::Array> arr = v8::Local<v8::Array>::Cast(args[0]);
-	uint32_t len = arr->Length();
-	char * buf = new char[max];
-	const char * keys[9] = {
-			"host",
-			"port",
-			"dbname",
-			"user",
-			"password"
-		};
-	for (unsigned int i=0;i<len;i++) {
-		v8::String::Utf8Value key(JS_ISOLATE, JS_STR(keys[i]) );
-		v8::String::Utf8Value val(JS_ISOLATE, arr->Get(JS_CONTEXT,JS_INT(i)).ToLocalChecked()->ToString(JS_CONTEXT).ToLocalChecked() );
-		if (i==0)
-			sprintf(buf,"%s=%s",*key,*val);
-		else
-			sprintf(buf,"%s %s=%s",buf,*key,*val);
-	}
-	v8::String::Utf8Value connstr(JS_ISOLATE,JS_STR(buf));
-	conn = PQconnectdb(*connstr);
-	sprintf(tconnstr,"%s",buf);
-	delete[] buf;
+				v8::Local<v8::Array> arr = v8::Local<v8::Array>::Cast(args[0]);
+				uint32_t len = arr->Length();
+				char * buf = new char[max];
+				const char * keys[9] = {
+						"host",
+						"port",
+						"dbname",
+						"user",
+						"password"
+					};
+				for (unsigned int i=0;i<len;i++) {
+					v8::String::Utf8Value key(JS_ISOLATE, JS_STR(keys[i]) );
+					v8::String::Utf8Value val(JS_ISOLATE, arr->Get(JS_CONTEXT,JS_INT(i)).ToLocalChecked()->ToString(JS_CONTEXT).ToLocalChecked() );
+					if (i==0)
+						sprintf(buf,"%s=%s",*key,*val);
+					else
+						sprintf(buf,"%s %s=%s",buf,*key,*val);
+				}
+				v8::String::Utf8Value connstr(JS_ISOLATE,JS_STR(buf));
+				conn = PQconnectdb(*connstr);
+				sprintf(tconnstr,"%s",buf);
+				delete[] buf;
 			}
 			else if (args[0]->IsObject()) {
-	v8::Local<v8::Object> arr = v8::Local<v8::Object>::Cast(args[0]);
-	v8::Local<v8::Array> keys = v8::Local<v8::Array>::Cast(arr->GetPropertyNames(JS_CONTEXT).ToLocalChecked());
-	uint32_t len = keys->Length();
-	char * buf = new char[max];
-	for (unsigned int i=0;i<len;i++) {
-		v8::String::Utf8Value key(JS_ISOLATE, keys->Get(JS_CONTEXT,JS_INT(i)).ToLocalChecked()->ToString(JS_CONTEXT).ToLocalChecked() );
-		v8::String::Utf8Value val(JS_ISOLATE, arr->Get(JS_CONTEXT,JS_STR(*key)).ToLocalChecked() );
-		if (i==0)
-			sprintf(buf,"%s=%s",*key,*val);
-		else
-			sprintf(buf,"%s %s=%s",buf,*key,*val);
-	}
-	v8::String::Utf8Value connstr(JS_ISOLATE,JS_STR(buf));
-	conn = PQconnectdb(*connstr);
-	sprintf(tconnstr,"%s",buf);
-	delete[] buf;
+				v8::Local<v8::Object> arr = v8::Local<v8::Object>::Cast(args[0]);
+				v8::Local<v8::Array> keys = v8::Local<v8::Array>::Cast(arr->GetPropertyNames(JS_CONTEXT).ToLocalChecked());
+				uint32_t len = keys->Length();
+				char * buf = new char[max];
+				for (unsigned int i=0;i<len;i++) {
+					v8::String::Utf8Value key(JS_ISOLATE, keys->Get(JS_CONTEXT,JS_INT(i)).ToLocalChecked()->ToString(JS_CONTEXT).ToLocalChecked() );
+					v8::String::Utf8Value val(JS_ISOLATE, arr->Get(JS_CONTEXT,JS_STR(*key)).ToLocalChecked() );
+					if (i==0)
+						sprintf(buf,"%s=%s",*key,*val);
+					else
+						sprintf(buf,"%s %s=%s",buf,*key,*val);
+				}
+				v8::String::Utf8Value connstr(JS_ISOLATE,JS_STR(buf));
+				conn = PQconnectdb(*connstr);
+				sprintf(tconnstr,"%s",buf);
+				delete[] buf;
 			}
 			else {
-	v8::String::Utf8Value err(JS_ISOLATE,JS_STR("[js_pgsql.cc] ERROR: incorrect number of input parameters (%d)"));
-	delete[] tconnstr;
-	JS_ERROR(*err);
-	return;
+				v8::String::Utf8Value err(JS_ISOLATE,JS_STR("[js_pgsql.cc] ERROR: incorrect number of input parameters (%d)"));
+				delete[] tconnstr;
+				JS_ERROR(*err);
+				return;
 			}
 		}
 		else {
@@ -326,8 +327,8 @@ v8::Local<v8::Array> fetch_any(PGresult *res,int lineno,bool fetch_objects)
 		if (PQstatus(conn) != CONNECTION_OK) {
 			std::string ex = PGSQL_ERROR;
 			if (conn) {
-	PQfinish(conn);
-	SAVE_PTR(0, NULL);
+				PQfinish(conn);
+				SAVE_PTR(0, NULL);
 			}
 			char err[max];
 			sprintf((char *)err,"%s (connstr: [%s])",ex.c_str(),tconnstr);
@@ -676,7 +677,7 @@ JS_METHOD(_query) {
 		ASSERT_CONNECTED;
 		char ebuf[4096];
 		PGcancel * pg_cancel = PQgetCancel(conn);
-	int val=PQcancel(pg_cancel,ebuf,sizeof(ebuf));
+		int val=PQcancel(pg_cancel,ebuf,sizeof(ebuf));
 		v8::Local<v8::Value> ret = JS_INT(val);
 		PQfreeCancel(pg_cancel);
 		if (val < 0) {
@@ -838,12 +839,12 @@ JS_METHOD(_query) {
 	JS_METHOD(_fetchrow) {
 		PGSQL_RES_LOAD(res);
 		ASSERT_RESULT;
-	int i=-2;
+		int i=-2;
 		if (args.Length() > 0) {
-		v8::String::Utf8Value a(JS_ISOLATE,args[0]);
-		i = atoi(*a);
+			v8::String::Utf8Value a(JS_ISOLATE,args[0]);
+			i = atoi(*a);
 		}
-	v8::Local<v8::Array> item = fetch_any(res,i,false);
+		v8::Local<v8::Array> item = fetch_any(res,i,false);
 		args.GetReturnValue().Set(item->Get(JS_CONTEXT,JS_INT(0)).ToLocalChecked());
 	}
 
@@ -864,18 +865,18 @@ JS_METHOD(_query) {
 	JS_METHOD(_fetchrowobject) {
 		PGSQL_RES_LOAD(res);
 		ASSERT_RESULT;
-	int i = -2;
-	if (args.Length() > 0) {
-		v8::String::Utf8Value a(JS_ISOLATE,args[0]);
-		i = atoi(*a);
-	}
-	v8::Local<v8::Array> item = fetch_any(res,i,true);
+		int i = -2;
+		if (args.Length() > 0) {
+			v8::String::Utf8Value a(JS_ISOLATE,args[0]);
+			i = atoi(*a);
+		}
+		v8::Local<v8::Array> item = fetch_any(res,i,true);
 		args.GetReturnValue().Set(item->Get(JS_CONTEXT,JS_INT(0)).ToLocalChecked());
 	}
 
 	JS_METHOD(_reset) {
-	v8::HandleScope handle_scope(JS_ISOLATE);//v8::LocalScope handle_scope(JS_ISOLATE);
-	PGSQL_RES_SETPOS(0);
+		v8::HandleScope handle_scope(JS_ISOLATE);//v8::LocalScope handle_scope(JS_ISOLATE);
+		PGSQL_RES_SETPOS(0);
 		args.GetReturnValue().Set(JS_BOOL(true));
 	}
 

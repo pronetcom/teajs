@@ -12,3 +12,4 @@ system.stdout.writeLine("f1 tell: " + f1.tell());
 system.stdout.writeLine("f1 seek start: " + f1.seek(0, 0));
 
 f1.close();
+//

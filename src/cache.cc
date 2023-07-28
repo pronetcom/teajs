@@ -249,6 +249,6 @@ std::string Cache::wrapExports(std::string code) {
 	std::string result = "";
 	result += "(function(require,exports,module){";
 	result += code;
-	result += "})";
+	result += "\n})";
 	return result;
 }
