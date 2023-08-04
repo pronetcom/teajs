@@ -61,27 +61,27 @@ while (true) {
     line = obj.result;
     //line = zipOut.read();
     if (line != null && obj.size > 0) {
-        system.stdout.writeLine("out read");
+        //system.stdout.writeLine("out read");
         if (system.env.PRINT_DEBUGS == 1) {
             system.stdout.writeLine(line);
         }
         f2.write(line);
     }
     if (obj.info == 0) {
-        system.stdout.writeLine("out break");
+        //system.stdout.writeLine("out break");
         break;
     }
 }
 while (true) {
     var obj = zipErr.readNonblock();
-    system.stdout.writeLine("err read");
+    //system.stdout.writeLine("err read");
     line = obj.result;
     //line = zipERR.read();
     if (line != null && obj.size > 0) {
         system.stdout.writeLine(line);
     }
     if (obj.info == 0) {
-        system.stdout.writeLine("err break");
+        //system.stdout.writeLine("err break");
         break;
     }
 }
