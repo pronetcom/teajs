@@ -137,6 +137,15 @@ v8::Local<v8::Array> fetch_any(PGresult *res,int lineno,bool fetch_objects)
 				continue;
 			}
 			switch (types[j]) {
+				case 16: {
+					bool ans = false;
+					const char* pgvalue = PQgetvalue(res, i, j);
+					if (pgvalue[0] == 't' || pgvalue[0] == 'T') {
+						ans = true;
+					}
+					(void)item->Set(JS_CONTEXT, fieldnames->Get(JS_CONTEXT, JS_INT(j)).ToLocalChecked(), JS_BOOL(ans));
+					break;
+				}
 				case 20:
 				case 21:
 				case 23:
@@ -785,6 +794,15 @@ JS_METHOD(_query) {
 			JS_TYPE_ERROR("Column number out of bounds");
 			return;
 		}
+		if (PQftype(res, i) == 16) {
+			bool ans = false;
+			const char* pgvalue = PQgetvalue(res, i, j);
+			if (pgvalue[0] == 't' || pgvalue[0] == 'T') {
+				ans = true;
+			}
+			args.GetReturnValue().Set(JS_BOOL(ans));
+			return;
+		}
 		args.GetReturnValue().Set(JS_STR(PQgetvalue(res,i,j)));
 	}
 
@@ -806,6 +824,15 @@ JS_METHOD(_query) {
 		}
 		if (j > y || j < 0) {
 			JS_TYPE_ERROR("Column name does not exist");
+			return;
+		}
+		if (PQftype(res, i) == 16) {
+			bool ans = false;
+			const char* pgvalue = PQgetvalue(res, i, j);
+			if (pgvalue[0] == 't' || pgvalue[0] == 'T') {
+				ans = true;
+			}
+			args.GetReturnValue().Set(JS_BOOL(ans));
 			return;
 		}
 		args.GetReturnValue().Set(JS_STR(PQgetvalue(res,i,j)));
