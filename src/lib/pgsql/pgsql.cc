@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <sstream>
-// #include <iostream>
 
 #include <v8.h>
 #include "macros.h"
@@ -137,12 +136,10 @@ v8::Local<v8::Array> fetch_any(PGresult *res,int lineno,bool fetch_objects)
 				(void)item->Set(JS_CONTEXT,fieldnames->Get(JS_CONTEXT,JS_INT(j)).ToLocalChecked(), v8::Null(JS_ISOLATE));
 				continue;
 			}
-			// std::cout << "pgsql.cc: fetch_any: types[" << j << "]: " << types[j] << std::endl;
 			switch (types[j]) {
 				case 16: {
 					bool ans = false;
 					const char* pgvalue = PQgetvalue(res, i, j);
-					// std::cout << "pgsql.cc: _fetchresult: value[" << i << "][" << j << "]: " << pgvalue << std::endl;
 					if (pgvalue[0] == 't' || pgvalue[0] == 'T') {
 						ans = true;
 					}
@@ -261,25 +258,19 @@ v8::Local<v8::Array> fetch_any(PGresult *res,int lineno,bool fetch_objects)
 	 *	- call format: new PostgreSQL().connect("host", "user", "pass", "db")
 	 */ 
 	JS_METHOD(_connect) {
-		// std::cout << "pgsql.cc: connect: start" << std::endl;
 		if (args.Length() < 1 and args.Length() != 5) {
-			// std::cout << "pgsql.cc: connect: invalid size of args" << std::endl;
 			JS_TYPE_ERROR("Invalid call format. Use either 'pgsql.connect(\"hostaddr=host port=port dbname=dbname user=user password=pass\")' or 'pgsql.connect(host, port, db, user, password)'");
 			return;
 		}
 		uint32_t max = 4096;
 		PGconn * conn = NULL;
 		char * tconnstr = new char[max];
-		// std::cout << "pgsql.cc: connect: after *conn=NULL" << std::endl;
 		if (args.Length() == 1) {
-			// std::cout << "pgsql.cc: connect: args.len = 1" << std::endl;
 			if (args[0]->IsString()) {
-				// std::cout << "pgsql.cc: connect: args - string" << std::endl;
 				v8::String::Utf8Value connstr(JS_ISOLATE,args[0]);
 				conn = PQconnectdb(*connstr);
 			}
 			else if (args[0]->IsArray()) {
-				// std::cout << "pgsql.cc: connect: args - array" << std::endl;
 				v8::Local<v8::Array> arr = v8::Local<v8::Array>::Cast(args[0]);
 				uint32_t len = arr->Length();
 				char * buf = new char[max];
@@ -304,7 +295,6 @@ v8::Local<v8::Array> fetch_any(PGresult *res,int lineno,bool fetch_objects)
 				delete[] buf;
 			}
 			else if (args[0]->IsObject()) {
-				// std::cout << "pgsql.cc: connect: args - object" << std::endl;
 				v8::Local<v8::Object> arr = v8::Local<v8::Object>::Cast(args[0]);
 				v8::Local<v8::Array> keys = v8::Local<v8::Array>::Cast(arr->GetPropertyNames(JS_CONTEXT).ToLocalChecked());
 				uint32_t len = keys->Length();
@@ -323,7 +313,6 @@ v8::Local<v8::Array> fetch_any(PGresult *res,int lineno,bool fetch_objects)
 				delete[] buf;
 			}
 			else {
-				// std::cout << "pgsql.cc: connect: args - ???" << std::endl;
 				v8::String::Utf8Value err(JS_ISOLATE,JS_STR("[js_pgsql.cc] ERROR: incorrect number of input parameters (%d)"));
 				delete[] tconnstr;
 				JS_ERROR(*err);
@@ -331,7 +320,6 @@ v8::Local<v8::Array> fetch_any(PGresult *res,int lineno,bool fetch_objects)
 			}
 		}
 		else {
-			// std::cout << "pgsql.cc: connect: args.len = 5" << std::endl;
 			v8::String::Utf8Value pghost(JS_ISOLATE,args[0]);
 			v8::String::Utf8Value pgport(JS_ISOLATE,args[1]);
 			v8::String::Utf8Value pgdb(JS_ISOLATE,args[2]);
@@ -341,12 +329,10 @@ v8::Local<v8::Array> fetch_any(PGresult *res,int lineno,bool fetch_objects)
 			uint32_t tlen = (uint32_t)(pghost.length() + pgport.length() + pgdb.length() + pguser.length() + pgpass.length() + strlen(tstr));
 			char * tmpstr = new char[tlen];
 			sprintf(tmpstr, tstr, *pghost, *pgport, *pgdb, *pguser, *pgpass);
-			// std::cout << "pgsql.cc: connect: tmpstr: " << tmpstr << std::endl;
 			v8::String::Utf8Value connstr(JS_ISOLATE,JS_STR(tmpstr));
 			conn = PQconnectdb(*connstr);
 			delete[] tmpstr;
 		}
-		// std::cout << "pgsql.cc: connect: after PQconnectdb" << std::endl;
 		if (PQstatus(conn) != CONNECTION_OK) {
 			std::string ex = PGSQL_ERROR;
 			if (conn) {
@@ -808,11 +794,9 @@ JS_METHOD(_query) {
 			JS_TYPE_ERROR("Column number out of bounds");
 			return;
 		}
-		// std::cout << "pgsql.cc: _fetchresult: type[" << i << "][" << j << "]: " << PQftype(res, i) << std::endl;
 		if (PQftype(res, i) == 16) {
 			bool ans = false;
 			const char* pgvalue = PQgetvalue(res, i, j);
-			// std::cout << "pgsql.cc: _fetchresult: value[" << i << "][" << j << "]: " << pgvalue << std::endl;
 			if (pgvalue[0] == 't' || pgvalue[0] == 'T') {
 				ans = true;
 			}
@@ -845,7 +829,6 @@ JS_METHOD(_query) {
 		if (PQftype(res, i) == 16) {
 			bool ans = false;
 			const char* pgvalue = PQgetvalue(res, i, j);
-			// std::cout << "pgsql.cc: _fetchresult: value[" << i << "][" << j << "]: " << pgvalue << std::endl;
 			if (pgvalue[0] == 't' || pgvalue[0] == 'T') {
 				ans = true;
 			}
