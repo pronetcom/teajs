@@ -4,7 +4,6 @@ var http = require("http");
 
 function do_send(url, length, body, headers) {
 	var req = new http.ClientRequest(url);
-	system.stdout.writeLine(req.post);
 	req.addParams(new Map([
 		['name', 'bobby hadz'],
 		['country', 'Chile'],

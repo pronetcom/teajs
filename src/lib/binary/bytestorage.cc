@@ -75,6 +75,7 @@ size_t ByteStorageData::getAllocatedLength()
 {
 	return this->allocated_length;
 }
+
 void ByteStorageData::add(const char *add, size_t _length)
 {
 	//printf("ByteStorageData::add(const char *add,%d) this->length=%d,this->allocated_length=%d\n",_length,this->length,this->allocated_length);
@@ -96,6 +97,16 @@ void ByteStorageData::add(const char *add, size_t _length)
 	}
 	memmove(this->data+this->length,add,_length);
 	this->length += _length;
+}
+
+void ByteStorageData::pop_back(size_t _length)
+{
+	if (_length > this->length) {
+		JS_ERROR("Given length in ByteStorageData::pop_back is too big");
+		return;
+	}
+	this->length -= _length;
+	this->data[this->length] = '\0';
 }
 
 

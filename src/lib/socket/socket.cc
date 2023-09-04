@@ -12,6 +12,11 @@
 #include <fcntl.h>
 //#include <in.h>
 
+#include <iostream>
+#include <string>
+#include <stdio.h>
+#include <stdlib.h>
+
 #ifdef windows
 #  include <winsock2.h>
 #  include <ws2tcpip.h>
@@ -570,12 +575,29 @@ JS_METHOD(_receive) {
 }
 
 JS_METHOD(_receive_strict) {
+	bool debug = false;
+	if (const char* env_d = std::getenv("PRINT_DEBUGS")) {
+		if (strcmp(env_d, "1") == 0) {
+			debug = true;
+		}
+	}
 	int sock = LOAD_VALUE(0)->Int32Value(JS_CONTEXT).ToChecked();
 	int count = args[0]->Int32Value(JS_CONTEXT).ToChecked();
 	int type = args.This()->Get(JS_CONTEXT,JS_STR("type")).ToLocalChecked()->Int32Value(JS_CONTEXT).ToChecked();
+
+	bool toFile = false, readHeaderAlready = false;
+	std::string fileName = "";
+	if (args.Length() > 1) {
+		v8::String::Utf8Value name(JS_ISOLATE, args[1]);
+		fileName = *name;
+		if (debug) {
+			std::cout << "SOCKET RECEIVE_STRICT FILENAME: " << fileName << std::endl;
+		}
+	}
 	
 	const int TMP_BUFFER_MAX=10240;
-	char * tmp = (char*)malloc(TMP_BUFFER_MAX);
+	// char * tmp = (char*)malloc(TMP_BUFFER_MAX);
+	char* tmp = new char [TMP_BUFFER_MAX];
 	sock_addr_t addr;
 	socklen_t addrlen = 0;
 
@@ -583,7 +605,15 @@ JS_METHOD(_receive_strict) {
 
 	int flag=1;
 	int recv_cap;
-	ByteStorageData *bsd=new ByteStorageData(0,10240);
+	ByteStorageData *bsd = nullptr, *header = nullptr;
+	FILE* fileToWrite = nullptr;
+	if (!toFile) {
+		bsd = new ByteStorageData(0, 10240);
+	}
+	else {
+		fileToWrite = fopen(fileName.c_str(), "w");
+		header = new ByteStorageData(0, 10240);
+	}
 	while (flag) {
 		if (count==0) {
 			recv_cap=TMP_BUFFER_MAX;
@@ -599,22 +629,76 @@ JS_METHOD(_receive_strict) {
 		ssize_t result = recvfrom(sock, tmp, recv_cap, 0, (sockaddr *) &addr, &addrlen);
 		//printf("	recvfrom() result=%d\n",result);
 		if (result>0) {
-			bsd->add(tmp,result);
-			received+=result;
+			received += result;
+			if (!toFile) {
+				bsd->add(tmp, result);
+			}
+			else {
+				if (readHeaderAlready) {
+					int res = fwrite(tmp, sizeof(char), recv_cap, fileToWrite);
+					fflush(fileToWrite);
+					if (res != recv_cap) {
+						JS_ERROR("Internal problem was encountered while writing to file");
+						return;
+					}
+				}
+				else {
+					char* beginToSearching = header->getData();
+					if (header->getLength() > 3) {
+						beginToSearching += (header->getLength() - 1) - 3;
+					}
+					header->add(tmp, result);
+					
+					char* p = nullptr;
+					// find "\r\n\r\n"
+					if ((p = strstr(beginToSearching, "\r\n\r\n")) != nullptr) {
+						readHeaderAlready = true;
+						// drop all after "\r\n\r\n" to file
+						int sizeToFile = header->getLength() - (int)(p + 4 - header->getData());
+						int res = fwrite(p + 4, sizeof(char), sizeToFile, fileToWrite);
+						fflush(fileToWrite);
+						if (res != sizeToFile) {
+							JS_ERROR("Internal problem was encountered while writing to file");
+							return;
+						}
+						header->pop_back(sizeToFile);
+					}
+				}
+			}
 		} else if (result==0) {
 			flag=0;// ???
 		} else {
 			if (WOULD_BLOCK) {
 				flag=0;
 			} else {
-				free(tmp);
+				// free(tmp);
+				if (debug) {
+					std::cout << "SOCKET RECEIVE_STRICT FAILED BSD SIZE: " << received << std::endl;
+					std::cout << "RESULT: " << result << std::endl;
+				}
+				if (!toFile) {
+					delete[] tmp;
+				}
+				else {
+					fclose(fileToWrite);
+				}
 				delete bsd;
 				FormatError();
 				return;
 			}
 		}
 	}
-	free(tmp);
+	if (debug) {
+		std::cout << "SOCKET RECEIVE_STRICT BSD SIZE: " << received << std::endl;
+	}
+	delete[] tmp;
+	if (toFile) {
+		fclose(fileToWrite);
+		v8::Local<v8::Value> buffer = BYTESTORAGE_TO_JS(new ByteStorage(header));
+		args.GetReturnValue().Set(buffer);
+		return;
+	}
+	//free(tmp);
 	v8::Local<v8::Value> buffer = BYTESTORAGE_TO_JS(new ByteStorage(bsd));
 	args.GetReturnValue().Set(buffer);
 }

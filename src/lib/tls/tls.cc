@@ -233,16 +233,38 @@ JS_METHOD(_receive_strict) {
 	SSL * ssl = LOAD_SSL;
 	int count = args[0]->Int32Value(JS_CONTEXT).ToChecked();
 
+	bool toFile = false, readHeaderAlready = false;
+	std::string fileName = "";
+	if (args.Length() > 1) {
+		v8::String::Utf8Value name(JS_ISOLATE, args[1]);
+		fileName = *name;
+		toFile = true;
+		if (debug) {
+			std::cout << "SOCKET RECEIVE_STRICT FILENAME: " << fileName << std::endl;
+		}
+	}
+
 	const int TMP_BUFFER_MAX=10240;
-	char * tmp = (char*)malloc(TMP_BUFFER_MAX);
+	// char * tmp = (char*)malloc(TMP_BUFFER_MAX);
+	char* tmp = new char[TMP_BUFFER_MAX];
 	
 	ssize_t len;
 	int received=0;
 
 	int flag=1;
 	int recv_cap;
-	ByteStorageData *bsd=new ByteStorageData(0,10240);
-
+	ByteStorageData *bsd = nullptr, * header = nullptr;
+	FILE* fileToWrite = nullptr;
+	if (!toFile) {
+		bsd = new ByteStorageData(0, 10240);
+	}
+	else {
+		fileToWrite = fopen(fileName.c_str(), "w");
+		header = new ByteStorageData(0, 10240);
+		if (debug) {
+			std::cout << "TLS FILE START: " << std::endl;
+		}
+	}
 
 	int iTemp = 0;
 	while (flag) {
@@ -273,25 +295,86 @@ JS_METHOD(_receive_strict) {
 		if (len==0) {
 			flag=0;
 		} else if (len>0) {
-			bsd->add(tmp,len);
-			received+=len;
+			received += len;
+			if (!toFile) {
+				bsd->add(tmp, len);
+			}
+			else {
+				if (readHeaderAlready) {
+					//if (debug) {
+						//std::cout << "TLS FILE READING BODY: " << std::endl;
+					//}
+					int result = fwrite(tmp, sizeof(char), recv_cap, fileToWrite);
+					fflush(fileToWrite);
+					if (result != recv_cap) {
+						JS_ERROR("Internal problem was encountered while writing to file");
+						return;
+					}
+				}
+				else {
+					if (debug) {
+						std::cout << "TLS FILE READING HEADER: " << std::endl;
+					}
+					char* beginToSearching = header->getData();
+					if (header->getLength() > 3) {
+						beginToSearching += (header->getLength() - 1) - 3;
+					}
+					header->add(tmp, len);
+
+					char* p = nullptr;
+					// find "\r\n\r\n"
+					if ((p = strstr(beginToSearching, "\r\n\r\n")) != nullptr) {
+						if (debug) {
+							std::cout << "TLS FILE FOUND BOUNDARY: " << std::endl;
+						}
+						readHeaderAlready = true;
+						// drop all after "\r\n\r\n" to file
+						int sizeToFile = header->getLength() - (int)(p + 4 - header->getData());
+						int result = fwrite(p + 4, sizeof(char), sizeToFile, fileToWrite);
+						fflush(fileToWrite);
+						if (result != sizeToFile) {
+							JS_ERROR("Internal problem was encountered while writing to file");
+							return;
+						}
+						header->pop_back(sizeToFile);
+					}
+				}
+			}
 		} else {
-			free(tmp);
+			// free(tmp);
+			delete[] tmp;
 			delete bsd;
 			SSL_ERROR(ssl, (int)len);
 			return;
 		}
 	}
-	free(tmp);
+	// free(tmp);
+	delete[] tmp;
+	if (debug) {
+		std::cout << "SOCKET RECEIVE_STRICT BSD SIZE: " << received << std::endl;
+	}
 	if (debug) {
 		std::cout << "CTIME FOR RECEIVE: " << (float)(clock() - now) / CLOCKS_PER_SEC << std::endl;
 		now = clock();
+	}
+	if (toFile) {
+		if (debug) {
+			std::cout << "CTIME FOR BUFFER FILE: " << (float)(clock() - now) / CLOCKS_PER_SEC << std::endl;
+		}
+		fclose(fileToWrite);
+		v8::Local<v8::Value> buffer = BYTESTORAGE_TO_JS(new ByteStorage(header));
+		args.GetReturnValue().Set(buffer);
+		if (debug) {
+			std::cout << "CTIME FOR TOTAL (FILE): " << (float)(clock() - begin) / CLOCKS_PER_SEC << ", ITERATIONS: " << iTemp << std::endl;
+		}
+		return;
 	}
 	v8::Local<v8::Value> buffer = BYTESTORAGE_TO_JS(new ByteStorage(bsd));
 	if (debug) {
 		std::cout << "CTIME FOR BUFFER: " << (float)(clock() - now) / CLOCKS_PER_SEC << std::endl;
 		now = clock();
 	}
+
 	args.GetReturnValue().Set(buffer);
 	if (debug) {
 		std::cout << "CTIME FOR SET RETURN VALUE: " << (float)(clock() - now) / CLOCKS_PER_SEC << std::endl;
