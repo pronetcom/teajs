@@ -253,7 +253,7 @@ JS_METHOD(_receive_strict) {
 
 	int flag=1;
 	int recv_cap;
-	ByteStorageData *bsd = nullptr, * header = nullptr;
+	ByteStorageData *bsd = nullptr, *header = nullptr;
 	FILE* fileToWrite = nullptr;
 	if (!toFile) {
 		bsd = new ByteStorageData(0, 10240);
@@ -269,14 +269,14 @@ JS_METHOD(_receive_strict) {
 	int iTemp = 0;
 	while (flag) {
 		iTemp++;
-		if (count==0) {
+		if (count == 0) {
 			recv_cap=TMP_BUFFER_MAX;
 		} else {
 			recv_cap=count-received;
-			if (recv_cap>TMP_BUFFER_MAX) recv_cap=TMP_BUFFER_MAX;
+			if (recv_cap > TMP_BUFFER_MAX) recv_cap=TMP_BUFFER_MAX;
 		}
-		if (recv_cap==0) {
-			flag=0;
+		if (recv_cap == 0) {
+			flag = 0;
 			continue;
 		}
 		//printf("SSL_read() recv_cap=%d\n",recv_cap);
@@ -292,10 +292,9 @@ JS_METHOD(_receive_strict) {
 		}
 		//printf("	SSL_read() len=%d\n",len);
 
-		if (len==0) {
+		if (len == 0) {
 			flag=0;
-		} else if (len>0) {
-			received += len;
+		} else if (len > 0 && len <= recv_cap) {
 			if (!toFile) {
 				bsd->add(tmp, len);
 			}
@@ -304,9 +303,9 @@ JS_METHOD(_receive_strict) {
 					//if (debug) {
 						//std::cout << "TLS FILE READING BODY: " << std::endl;
 					//}
-					int result = fwrite(tmp, sizeof(char), recv_cap, fileToWrite);
+					int result = fwrite(tmp, sizeof(char), len, fileToWrite);
 					fflush(fileToWrite);
-					if (result != recv_cap) {
+					if (result != len) {
 						JS_ERROR("Internal problem was encountered while writing to file");
 						return;
 					}
@@ -339,11 +338,21 @@ JS_METHOD(_receive_strict) {
 						header->pop_back(sizeToFile);
 					}
 				}
+				received += len;
 			}
 		} else {
+			if (recv_cap < len) {
+				std::cerr << "TLS FILE ERROR: len > recv_cap;\nrecv_cap = " << recv_cap << ";\nlen = " << len << ";\n";
+			}
 			// free(tmp);
 			delete[] tmp;
-			delete bsd;
+			if (!toFile) {
+				delete bsd;
+			}
+			else {
+				delete header;
+				fclose(fileToWrite);
+			}
 			SSL_ERROR(ssl, (int)len);
 			return;
 		}
