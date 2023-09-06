@@ -16,6 +16,7 @@
 #include "path.h"
 
 #include <iostream>
+#include <fstream>
 
 #include <unistd.h>
 #include <dirent.h>
@@ -222,6 +223,48 @@ JS_METHOD(_read) {
 	}
 	
 	READ(f, count, args);
+}
+
+JS_METHOD(_getBinaryContent) { // pos, length
+	
+	v8::String::Utf8Value name(JS_ISOLATE, LOAD_VALUE(0));
+
+	
+	
+	size_t pos = 0, length = 0;
+	if (args.Length() && args[0]->IsNumber()) {
+		pos = args[0]->IntegerValue(JS_CONTEXT).ToChecked();
+	}
+
+	if (args.Length() > 1 && args[1]->IsNumber()) {
+		length = args[1]->IntegerValue(JS_CONTEXT).ToChecked();
+	}
+
+	std::ifstream ifile(*name, std::ios::binary | std::ios::ate);
+	std::streamsize size = ifile.tellg();
+	if (!length) {
+		length = size;
+	}
+	if (pos > size) {
+		args.GetReturnValue().Set(JS_STR(""));
+		return;
+	}
+	if (pos + length > size) {
+		length = size - pos;
+	}
+	ifile.seekg(pos, std::ios::beg);
+
+	char* buff = new char[length];
+	ifile.read(buff, length);
+	ifile.close();
+
+	v8::Local<v8::Object> ret = v8::Object::New(JS_ISOLATE);
+
+	(void)ret->Set(JS_CONTEXT, JS_STR("result"), JS_STR(buff));
+
+	(void)ret->Set(JS_CONTEXT, JS_STR("length"), JS_INT(length));
+
+	args.GetReturnValue().Set(ret);
 }
 
 JS_METHOD(_ftell) {
@@ -482,25 +525,26 @@ SHARED_INIT() {
 	/**
 	 * File prototype methods (new File().*)
 	 */
-	pt->Set(JS_ISOLATE,"open"		 , v8::FunctionTemplate::New(JS_ISOLATE, _open));
-	pt->Set(JS_ISOLATE,"read"		 , v8::FunctionTemplate::New(JS_ISOLATE, _read));
-	pt->Set(JS_ISOLATE,"tell"        , v8::FunctionTemplate::New(JS_ISOLATE, _ftell));
-	pt->Set(JS_ISOLATE,"seek"        , v8::FunctionTemplate::New(JS_ISOLATE, _fseek));
-	pt->Set(JS_ISOLATE,"readNonblock", v8::FunctionTemplate::New(JS_ISOLATE, _readNonblock));
-	pt->Set(JS_ISOLATE,"readLine"	 , v8::FunctionTemplate::New(JS_ISOLATE, _readline));
-	pt->Set(JS_ISOLATE,"rewind"		 , v8::FunctionTemplate::New(JS_ISOLATE, _rewind));
-	pt->Set(JS_ISOLATE,"close"		 , v8::FunctionTemplate::New(JS_ISOLATE, _close));
-	pt->Set(JS_ISOLATE,"flush"		 , v8::FunctionTemplate::New(JS_ISOLATE, _flush));
-	pt->Set(JS_ISOLATE,"write"		 , v8::FunctionTemplate::New(JS_ISOLATE, _write));
-	pt->Set(JS_ISOLATE,"writeLine"	 , v8::FunctionTemplate::New(JS_ISOLATE, _writeline));
-	pt->Set(JS_ISOLATE,"remove"		 , v8::FunctionTemplate::New(JS_ISOLATE, _removefile));
-	pt->Set(JS_ISOLATE,"toString"	 , v8::FunctionTemplate::New(JS_ISOLATE, _tostring));
-	pt->Set(JS_ISOLATE,"exists"		 , v8::FunctionTemplate::New(JS_ISOLATE, _exists));
-	pt->Set(JS_ISOLATE,"move"		 , v8::FunctionTemplate::New(JS_ISOLATE, _movefile));
-	pt->Set(JS_ISOLATE,"copy"		 , v8::FunctionTemplate::New(JS_ISOLATE, _copyfile));
-	pt->Set(JS_ISOLATE,"stat"		 , v8::FunctionTemplate::New(JS_ISOLATE, _stat));
-	pt->Set(JS_ISOLATE,"isFile"		 , v8::FunctionTemplate::New(JS_ISOLATE, _isfile));
-	pt->Set(JS_ISOLATE,"isEOF"		 , v8::FunctionTemplate::New(JS_ISOLATE, _iseof));
+	pt->Set(JS_ISOLATE,"open"		     , v8::FunctionTemplate::New(JS_ISOLATE, _open));
+	pt->Set(JS_ISOLATE,"read"		     , v8::FunctionTemplate::New(JS_ISOLATE, _read));
+	pt->Set(JS_ISOLATE,"getBinaryContent", v8::FunctionTemplate::New(JS_ISOLATE, _getBinaryContent));
+	pt->Set(JS_ISOLATE,"tell"            , v8::FunctionTemplate::New(JS_ISOLATE, _ftell));
+	pt->Set(JS_ISOLATE,"seek"            , v8::FunctionTemplate::New(JS_ISOLATE, _fseek));
+	pt->Set(JS_ISOLATE,"readNonblock"    , v8::FunctionTemplate::New(JS_ISOLATE, _readNonblock));
+	pt->Set(JS_ISOLATE,"readLine"	     , v8::FunctionTemplate::New(JS_ISOLATE, _readline));
+	pt->Set(JS_ISOLATE,"rewind"		     , v8::FunctionTemplate::New(JS_ISOLATE, _rewind));
+	pt->Set(JS_ISOLATE,"close"		     , v8::FunctionTemplate::New(JS_ISOLATE, _close));
+	pt->Set(JS_ISOLATE,"flush"		     , v8::FunctionTemplate::New(JS_ISOLATE, _flush));
+	pt->Set(JS_ISOLATE,"write"		     , v8::FunctionTemplate::New(JS_ISOLATE, _write));
+	pt->Set(JS_ISOLATE,"writeLine"	     , v8::FunctionTemplate::New(JS_ISOLATE, _writeline));
+	pt->Set(JS_ISOLATE,"remove"		     , v8::FunctionTemplate::New(JS_ISOLATE, _removefile));
+	pt->Set(JS_ISOLATE,"toString"	     , v8::FunctionTemplate::New(JS_ISOLATE, _tostring));
+	pt->Set(JS_ISOLATE,"exists"		     , v8::FunctionTemplate::New(JS_ISOLATE, _exists));
+	pt->Set(JS_ISOLATE,"move"		     , v8::FunctionTemplate::New(JS_ISOLATE, _movefile));
+	pt->Set(JS_ISOLATE,"copy"		     , v8::FunctionTemplate::New(JS_ISOLATE, _copyfile));
+	pt->Set(JS_ISOLATE,"stat"		     , v8::FunctionTemplate::New(JS_ISOLATE, _stat));
+	pt->Set(JS_ISOLATE,"isFile"		     , v8::FunctionTemplate::New(JS_ISOLATE, _isfile));
+	pt->Set(JS_ISOLATE,"isEOF"		     , v8::FunctionTemplate::New(JS_ISOLATE, _iseof));
 
 
 	(void)exports->Set(JS_CONTEXT,JS_STR("File"), ft->GetFunction(JS_CONTEXT).ToLocalChecked());			

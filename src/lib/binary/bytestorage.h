@@ -16,7 +16,8 @@ public:
 	char * getData();
 	size_t getLength();
 	size_t getAllocatedLength();
-	void add(const char *add,size_t _length);
+	void add(const char *add, size_t _length);
+	void pop_back(size_t _length = 1);
 private:
 	char * data;
 	size_t length;
