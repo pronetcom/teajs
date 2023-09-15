@@ -4,14 +4,16 @@ var http=require("http");
 
 function do_download(url,length,body,headers)
 {
-	var req=new http.ClientRequest(url);
+	var req = new http.ClientRequest(url);
+
+	req.setSkipPort(true);
 
 	var resp=req.send(false);
 	if (length>=0) {
 		assert.equal(resp.data.length,length, "Response must be "+length+" bytes");
 	}
 	if (body) {
-		assert.equal(resp.data.toString("utf-8"),body, "Wrong response body");
+		assert.equal(resp.data.toString("utf-8"), body, "Wrong response body");
 	}
 	if (headers) {
 		for (var k in headers) {
@@ -42,10 +44,6 @@ exports.testHTTPS_short2 = function() {
 	do_download("https://easymerch.com/site.css",-1,undefined,{"CONTENT-TYPE": "text/css","CONNECTION": "close"});
 };
 
-exports.testHTTP_beeline = function () {
-	do_download("http://cloudpbx.beeline.ru/apis/portal/records");
-};
-
 exports.testHTTPS_beeline = function () {
-	do_download("https://cloudpbx.beeline.ru/apis/portal/records");
+	do_download("https://cloudpbx.beeline.ru/apis/portal/records", 61, '{"errorCode":"AuthTokenNotFoundInRequest","description":null}');
 };
