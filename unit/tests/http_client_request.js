@@ -41,3 +41,11 @@ exports.testHTTPS_reconn = function() {
 exports.testHTTPS_short2 = function() {
 	do_download("https://easymerch.com/site.css",-1,undefined,{"CONTENT-TYPE": "text/css","CONNECTION": "close"});
 };
+
+exports.testHTTP_beeline = function () {
+	do_download("http://cloudpbx.beeline.ru/apis/portal/records");
+};
+
+exports.testHTTPS_beeline = function () {
+	do_download("https://cloudpbx.beeline.ru/apis/portal/records");
+};
