@@ -2,6 +2,7 @@
 #include "macros.h"
 
 #include <ncurses.h>
+#include <unistd.h>
 
 namespace {
 JS_METHOD(_curses) {
@@ -155,6 +156,16 @@ JS_METHOD(_get_cur_x) {
 	args.GetReturnValue().Set(JS_INT(x));
 }
 
+JS_METHOD(_usleep) {
+	if (args.Length() != 1) {
+		JS_TYPE_ERROR("Bad argument count. Use 'curses.getCurX();'");
+		return;
+	}
+	int time = args[0]->Int32Value(JS_CONTEXT).ToChecked();
+	usleep(time);
+	args.GetReturnValue().SetUndefined();
+}
+
 JS_METHOD(_getch) {
 	if (args.Length()) {
 		JS_TYPE_ERROR("Bad argument count. Use 'curses.getCurX();'");
@@ -187,22 +198,23 @@ SHARED_INIT() {
 	/**
 	 * Prototype methods (new Curses().*)
 	 */
-	pt->Set(JS_ISOLATE, "Raw", v8::FunctionTemplate::New(JS_ISOLATE, _raw));
-	pt->Set(JS_ISOLATE, "CBreak", v8::FunctionTemplate::New(JS_ISOLATE, _cbreak));
-	pt->Set(JS_ISOLATE, "Echo", v8::FunctionTemplate::New(JS_ISOLATE, _echo));
-	pt->Set(JS_ISOLATE, "Noecho", v8::FunctionTemplate::New(JS_ISOLATE, _noecho));
-	pt->Set(JS_ISOLATE, "Keypad", v8::FunctionTemplate::New(JS_ISOLATE, _keypad));
-	pt->Set(JS_ISOLATE, "Halfdelay", v8::FunctionTemplate::New(JS_ISOLATE, _halfdelay));
-	pt->Set(JS_ISOLATE, "Refresh", v8::FunctionTemplate::New(JS_ISOLATE, _refresh));
-	pt->Set(JS_ISOLATE, "Printw", v8::FunctionTemplate::New(JS_ISOLATE, _printw));
-	pt->Set(JS_ISOLATE, "MVPrintw", v8::FunctionTemplate::New(JS_ISOLATE, _mvprintw));
-	pt->Set(JS_ISOLATE, "Move", v8::FunctionTemplate::New(JS_ISOLATE, _move));
-	pt->Set(JS_ISOLATE, "GetRowSize", v8::FunctionTemplate::New(JS_ISOLATE, _get_row_size));
+	pt->Set(JS_ISOLATE, "Raw",           v8::FunctionTemplate::New(JS_ISOLATE, _raw));
+	pt->Set(JS_ISOLATE, "CBreak",        v8::FunctionTemplate::New(JS_ISOLATE, _cbreak));
+	pt->Set(JS_ISOLATE, "Echo",          v8::FunctionTemplate::New(JS_ISOLATE, _echo));
+	pt->Set(JS_ISOLATE, "Noecho",        v8::FunctionTemplate::New(JS_ISOLATE, _noecho));
+	pt->Set(JS_ISOLATE, "Keypad",        v8::FunctionTemplate::New(JS_ISOLATE, _keypad));
+	pt->Set(JS_ISOLATE, "Halfdelay",     v8::FunctionTemplate::New(JS_ISOLATE, _halfdelay));
+	pt->Set(JS_ISOLATE, "Refresh",       v8::FunctionTemplate::New(JS_ISOLATE, _refresh));
+	pt->Set(JS_ISOLATE, "Printw",        v8::FunctionTemplate::New(JS_ISOLATE, _printw));
+	pt->Set(JS_ISOLATE, "MVPrintw",      v8::FunctionTemplate::New(JS_ISOLATE, _mvprintw));
+	pt->Set(JS_ISOLATE, "Move",          v8::FunctionTemplate::New(JS_ISOLATE, _move));
+	pt->Set(JS_ISOLATE, "GetRowSize",    v8::FunctionTemplate::New(JS_ISOLATE, _get_row_size));
 	pt->Set(JS_ISOLATE, "GetColumnSize", v8::FunctionTemplate::New(JS_ISOLATE, _get_column_size));
-	pt->Set(JS_ISOLATE, "GetCurY", v8::FunctionTemplate::New(JS_ISOLATE, _get_cur_y));
-	pt->Set(JS_ISOLATE, "GetCurX", v8::FunctionTemplate::New(JS_ISOLATE, _get_cur_x));
-	pt->Set(JS_ISOLATE, "Getch", v8::FunctionTemplate::New(JS_ISOLATE, _getch));
-	pt->Set(JS_ISOLATE, "End", v8::FunctionTemplate::New(JS_ISOLATE, _end));
+	pt->Set(JS_ISOLATE, "GetCurY",       v8::FunctionTemplate::New(JS_ISOLATE, _get_cur_y));
+	pt->Set(JS_ISOLATE, "GetCurX",       v8::FunctionTemplate::New(JS_ISOLATE, _get_cur_x));
+	pt->Set(JS_ISOLATE, "Usleep",        v8::FunctionTemplate::New(JS_ISOLATE, _usleep));
+	pt->Set(JS_ISOLATE, "Getch",         v8::FunctionTemplate::New(JS_ISOLATE, _getch));
+	pt->Set(JS_ISOLATE, "End",           v8::FunctionTemplate::New(JS_ISOLATE, _end));
 
 	(void)exports->Set(JS_CONTEXT, JS_STR("Curses"), ft->GetFunction(JS_CONTEXT).ToLocalChecked());
 }
