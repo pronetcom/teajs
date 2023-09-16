@@ -22,7 +22,7 @@
 #define SAVE_PTR(index, ptr) SAVE_PTR_TO(args.This(), index, ptr)
 #define LOAD_PTR(index, type) LOAD_PTR_FROM(args.This(), index, type)
 #define SAVE_VALUE(index, val) args.This()->SetInternalField(index, val)
-#define LOAD_VALUE(index) args.This()->GetInternalField(index)
+#define LOAD_VALUE(index) v8::Local<v8::Value>::Cast(args.This()->GetInternalField(index))
 #define JS_STR(str) v8::String::NewFromUtf8(JS_ISOLATE, str).ToLocalChecked()
 #define JS_STR_LEN(str, len) v8::String::NewFromUtf8(JS_ISOLATE, str, v8::NewStringType::kNormal,len).ToLocalChecked()
 #define JS_INT(val) v8::Integer::New(JS_ISOLATE, val)

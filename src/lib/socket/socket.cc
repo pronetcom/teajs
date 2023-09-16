@@ -88,14 +88,14 @@ inline bool isSocket(v8::Local<v8::Value> value) {
 
 inline int jsToSocket(v8::Local<v8::Value> value) {
 	v8::Local<v8::FunctionTemplate> socketTemplate = v8::Local<v8::FunctionTemplate>::New(JS_ISOLATE, _socketTemplate);
-	if (INSTANCEOF(value, socketTemplate)) { return value->ToObject(JS_CONTEXT).ToLocalChecked()->GetInternalField(0)->Int32Value(JS_CONTEXT).ToChecked(); }
+	if (INSTANCEOF(value, socketTemplate)) { return v8::Local<v8::Value>::Cast(value->ToObject(JS_CONTEXT).ToLocalChecked()->GetInternalField(0))->Int32Value(JS_CONTEXT).ToChecked(); }
 	
 	v8::Local<v8::Value> getSocket = value->ToObject(JS_CONTEXT).ToLocalChecked()->Get(JS_CONTEXT,JS_STR("getSocket")).ToLocalChecked();
 
 	v8::Local<v8::Function> getSocketFunc = v8::Local<v8::Function>::Cast(getSocket);
 	v8::Local<v8::Value> socket = getSocketFunc->Call(JS_CONTEXT,value->ToObject(JS_CONTEXT).ToLocalChecked(), 0, NULL).ToLocalChecked();
 
-	return socket->ToObject(JS_CONTEXT).ToLocalChecked()->GetInternalField(0)->Int32Value(JS_CONTEXT).ToChecked();
+	return v8::Local<v8::Value>::Cast(socket->ToObject(JS_CONTEXT).ToLocalChecked()->GetInternalField(0))->Int32Value(JS_CONTEXT).ToChecked();
 }
 
 #ifndef HAVE_PTON
