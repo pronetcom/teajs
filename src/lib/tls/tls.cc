@@ -24,7 +24,7 @@
 
 
 #define NOT_SOCKET JS_TYPE_ERROR("Invalid call format. Use 'new TLS(socket)'")
-#define LOAD_SOCKET LOAD_VALUE(0)->ToObject(JS_CONTEXT).ToLocalChecked()->GetInternalField(0)->Int32Value(JS_CONTEXT).ToChecked()
+#define LOAD_SOCKET v8::Local<v8::Value>::Cast(LOAD_VALUE(0)->ToObject(JS_CONTEXT).ToLocalChecked()->GetInternalField(0))->Int32Value(JS_CONTEXT).ToChecked()
 #define LOAD_SSL LOAD_PTR(1, SSL *)
 #define SSL_ERROR(ssl, ret) JS_ERROR(formatError(ssl, ret).c_str())
 
