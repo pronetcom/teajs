@@ -36,6 +36,7 @@ size_t lastIndex(v8::Local<v8::Value> index, size_t length) {
 	return i;
 }
 
+/*
 void Buffer_destroy(v8::Local<v8::Object> instance) {
 	fprintf(stderr,"Buffer_destroy() - TODO\n");exit(1);
 	fprintf(stderr,"Buffer_destroy()\n");
@@ -43,6 +44,7 @@ void Buffer_destroy(v8::Local<v8::Object> instance) {
 	fprintf(stderr,"Buffer_destroy() bs=%ld\n",(void*)bs);
 	delete bs;
 }
+*/
 
 void Buffer_destroy2(void *tmp) {
 	ByteStorage *bs=(ByteStorage *)tmp;

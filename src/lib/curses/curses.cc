@@ -131,7 +131,7 @@ JS_METHOD(_get_column_size) {
 		JS_TYPE_ERROR("Bad argument count. Use 'curses.getColumnSize();'");
 		return;
 	}
-	int y, x;
+	int x, y;
 	getmaxyx(stdscr, y, x);
 	args.GetReturnValue().Set(JS_INT(x));
 }
@@ -151,7 +151,7 @@ JS_METHOD(_get_cur_x) {
 		JS_TYPE_ERROR("Bad argument count. Use 'curses.getCurX();'");
 		return;
 	}
-	int y, x;
+	int x, y;
 	getyx(stdscr, y, x);
 	args.GetReturnValue().Set(JS_INT(x));
 }

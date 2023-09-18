@@ -126,10 +126,10 @@ inline void READ(FILE * stream, size_t amount, const v8::FunctionCallbackInfo<v8
 inline void READ_NONBLOCK(int fd, size_t amount, const v8::FunctionCallbackInfo<v8::Value>& args) {
 	v8::Local<v8::Object> ret = v8::Object::New(JS_ISOLATE);
 	std::string data;
-	size_t size = 0;
+	ssize_t size = 0;
 
    if (amount == 0) { /* all */
-		size_t tmp;
+		ssize_t tmp;
 		char * buf = new char[1024];
 		while (true) {
 			tmp = read(fd, (void *) buf, sizeof(char) * sizeof(buf));
@@ -161,7 +161,7 @@ inline void READ_NONBLOCK(int fd, size_t amount, const v8::FunctionCallbackInfo<
 	}
 	//if (size > 0) {
 	(void)ret->Set(JS_CONTEXT, JS_STR("result"), JS_BUFFER((char *) data.data(), size));
-	(void)ret->Set(JS_CONTEXT, JS_STR("size"), JS_INT(size));
+	(void)ret->Set(JS_CONTEXT, JS_STR("size"), JS_INT((int)size));
 	args.GetReturnValue().Set(ret);
 	return;
 	//}
@@ -187,12 +187,12 @@ inline size_t WRITE(FILE * stream, v8::Local<v8::Value> data) {
 	if (IS_BUFFER(data)) {
 		size_t size = 0;
 		char * cdata = JS_BUFFER_TO_CHAR(data, &size);
-		int result = fwrite(cdata, sizeof(char), size, stream);
+		size_t result = fwrite(cdata, sizeof(char), size, stream);
 		fflush(stream);
 		return result;
 	} else {
 		v8::String::Utf8Value utfdata(JS_ISOLATE,data);
-		int result = fwrite(*utfdata, sizeof(char), utfdata.length(), stream);
+		size_t result = fwrite(*utfdata, sizeof(char), utfdata.length(), stream);
 		fflush(stream);
 		return result;
 	}

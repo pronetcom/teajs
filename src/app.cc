@@ -316,8 +316,9 @@ v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > TeaJS_App:
  * Include a js module
  */
 int TeaJS_App::load_js(std::string filename, v8::Local<v8::Function> require, v8::Local<v8::Object> exports, v8::Local<v8::Object> module) {
-	char tmp[1024];
+
 #ifdef DEBUG_LOAD_JS
+	char tmp[1024];
 	sprintf(tmp,"TeaJS_App::load_js(%s)",filename.c_str());
 	write_debug(tmp);
 #endif
@@ -358,7 +359,7 @@ int TeaJS_App::load_js(std::string filename, v8::Local<v8::Function> require, v8
  */
 void TeaJS_App::load_dso(std::string filename, v8::Local<v8::Function> require, v8::Local<v8::Object> exports, v8::Local<v8::Object> module) {
 
-	v8::Isolate *isolate=JS_ISOLATE;
+	//v8::Isolate *isolate=JS_ISOLATE;
 	//fprintf(stderr,"TeaJS_App::load_dso(%s)\tisolate=%ld, InContext()=%d, context=%ld\n",filename.c_str(),(void*)JS_ISOLATE,isolate->InContext(),(void*)(*JS_CONTEXT));
 
 	v8::HandleScope handle_scope(JS_ISOLATE);//v8::LocalScope handle_scope(JS_ISOLATE);

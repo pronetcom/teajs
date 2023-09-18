@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdexcept>
 
 #ifdef windows
 #	include <io.h>
@@ -21,7 +22,9 @@
  */
 std::string path_normalize(std::string path) {
 	char * p = new char[PATH_MAX];
-	realpath(path.c_str(), p);
+	if (realpath(path.c_str(), p) == NULL) {
+		throw std::invalid_argument("path_normalize invalid path");
+	}
 	std::string result(p);
 	delete[] p;
 	return result;

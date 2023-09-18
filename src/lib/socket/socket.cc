@@ -414,7 +414,7 @@ JS_METHOD(_makeNonblock) {
 	v8::String::Utf8Value str(JS_ISOLATE, args[0]);
 	char* cName = *str;
 	bool isFd = true;
-	long fd = 0;
+	int fd = 0;
 	for (int i = 0; cName[i] != 0; i++) {
 		if (cName[i] < '0' || cName[i] > '9') {
 			isFd = false;
@@ -583,7 +583,7 @@ JS_METHOD(_receive_strict) {
 	}
 	int sock = LOAD_VALUE(0)->Int32Value(JS_CONTEXT).ToChecked();
 	int count = args[0]->Int32Value(JS_CONTEXT).ToChecked();
-	int type = args.This()->Get(JS_CONTEXT,JS_STR("type")).ToLocalChecked()->Int32Value(JS_CONTEXT).ToChecked();
+	// int type = args.This()->Get(JS_CONTEXT,JS_STR("type")).ToLocalChecked()->Int32Value(JS_CONTEXT).ToChecked();
 
 	bool toFile = false, readHeaderAlready = false;
 	std::string fileName = "";
@@ -604,7 +604,7 @@ JS_METHOD(_receive_strict) {
 	int received=0;
 
 	int flag=1;
-	int recv_cap;
+	size_t recv_cap;
 	ByteStorageData *bsd = nullptr, *header = nullptr;
 	FILE* fileToWrite = nullptr;
 	if (!toFile) {
@@ -635,7 +635,7 @@ JS_METHOD(_receive_strict) {
 			}
 			else {
 				if (readHeaderAlready) {
-					int res = fwrite(tmp, sizeof(char), recv_cap, fileToWrite);
+					size_t res = fwrite(tmp, sizeof(char), recv_cap, fileToWrite);
 					fflush(fileToWrite);
 					if (res != recv_cap) {
 						JS_ERROR("Internal problem was encountered while writing to file");
@@ -654,8 +654,8 @@ JS_METHOD(_receive_strict) {
 					if ((p = strstr(beginToSearching, "\r\n\r\n")) != nullptr) {
 						readHeaderAlready = true;
 						// drop all after "\r\n\r\n" to file
-						int sizeToFile = header->getLength() - (int)(p + 4 - header->getData());
-						int res = fwrite(p + 4, sizeof(char), sizeToFile, fileToWrite);
+						size_t sizeToFile = header->getLength() - (size_t)(p + 4 - header->getData());
+						size_t res = fwrite(p + 4, sizeof(char), sizeToFile, fileToWrite);
 						fflush(fileToWrite);
 						if (res != sizeToFile) {
 							JS_ERROR("Internal problem was encountered while writing to file");

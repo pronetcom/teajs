@@ -172,9 +172,18 @@ namespace {
 		int out_fd[2];
 		int err_fd[2];
 
-		pipe(input_fd); // Where the parent is going to write to
-		pipe(out_fd); // From where parent is going to read
-		pipe(err_fd);
+		if (pipe(input_fd) == -1) { // Where the parent is going to write to
+			JS_ERROR("Failed to pipe input (exec2)");
+			return;
+		}
+		if (pipe(out_fd) == -1) { // From where parent is going to read
+			JS_ERROR("Failed to pipe output (exec2)");
+			return;
+		}
+		if (pipe(err_fd) == -1) {
+			JS_ERROR("Failed to pipe error (exec2)");
+			return;
+		}
 
 		int pid = fork();
 		switch (pid) {
@@ -213,7 +222,10 @@ namespace {
 
 			if (arg_count >= 2) {
 				v8::String::Utf8Value input_arg(JS_ISOLATE, args[1]);
-				write(input_fd[1], *input_arg, input_arg.length()); // Write to child’s stdin
+				if (write(input_fd[1], *input_arg, input_arg.length()) == -1) { // Write to child’s stdin
+					JS_ERROR("Failed to write to child's stdin (exec2)");
+					return;
+				}
 			}
 			close(input_fd[1]);
 
@@ -274,12 +286,12 @@ namespace {
 			return;
 		}
 
-		const int MAX_BUFFER = 256;
-		char buffer[MAX_BUFFER + 1];
+		// const int MAX_BUFFER = 256;
+		// char buffer[MAX_BUFFER + 1];
 
 		v8::Local<v8::Array> command_args = v8::Local<v8::Array>::Cast(args[0]);
 		const char** argv = new const char* [command_args->Length() + 1];
-		for (int i = 0; i < command_args->Length(); i++) {
+		for (unsigned int i = 0; i < command_args->Length(); i++) {
 			v8::String::Utf8Value arg(JS_ISOLATE, command_args->Get(JS_CONTEXT, JS_INT(i)).ToLocalChecked()->ToString(JS_CONTEXT).ToLocalChecked());
 			argv[i] = strdup(*arg);
 		}
@@ -294,9 +306,18 @@ namespace {
 		int out_fd[2];
 		int err_fd[2];
 
-		pipe(input_fd); // Where the parent is going to write to
-		pipe(out_fd); // From where parent is going to read
-		pipe(err_fd);
+		if (pipe(input_fd) == -1) { // Where the parent is going to write to
+			JS_ERROR("Failed to pipe input (exec3)");
+			return;
+		}
+		if (pipe(out_fd) == -1) { // From where parent is going to read
+			JS_ERROR("Failed to pipe output (exec3)");
+			return;
+		}
+		if (pipe(err_fd) == -1) {
+			JS_ERROR("Failed to pipe error (exec3)");
+			return;
+		}
 
 		int pid = fork();
 		switch (pid) {
@@ -329,7 +350,7 @@ namespace {
 
 		default:  // Parent process.
 
-			for (int i = 0; i < command_args->Length(); i++) {
+			for (unsigned int i = 0; i < command_args->Length(); i++) {
 				delete[] argv[i];
 			}
 			delete [] argv;
@@ -343,7 +364,7 @@ namespace {
 			/*
 			if (arg_count >= 2) {
 				v8::String::Utf8Value input_arg(JS_ISOLATE, args[1]);
-				/*
+				/ *
 				uint32_t fd = args[1]->Uint32Value(v8::Context::New(JS_ISOLATE)).FromJust();
 				while (true) {
 					int bytes_read = (int)read(fd, buffer, MAX_BUFFER);
@@ -446,9 +467,18 @@ namespace {
 		int out_fd[2];
 		int err_fd[2];
 
-		pipe(input_fd); // Where the parent is going to write to
-		pipe(out_fd); // From where parent is going to read
-		pipe(err_fd);
+		if (pipe(input_fd) == -1) { // Where the parent is going to write to
+			JS_ERROR("Failed to pipe input (open3)");
+			return;
+		}
+		if (pipe(out_fd) == -1) { // From where parent is going to read
+			JS_ERROR("Failed to pipe output (open3)");
+			return;
+		}
+		if (pipe(err_fd) == -1) {
+			JS_ERROR("Failed to pipe error (open3)");
+			return;
+		}
 
 		int pid = fork();
 		switch (pid) {
@@ -487,7 +517,10 @@ namespace {
 
 			if (arg_count >= 2) {
 				v8::String::Utf8Value input_arg(JS_ISOLATE, args[1]);
-				write(input_fd[1], *input_arg, input_arg.length()); // Write to child’s stdin
+				if (write(input_fd[1], *input_arg, input_arg.length()) == -1) { // Write to child’s stdin
+					JS_ERROR("Failed to write to child's stdin (open3)");
+					return;
+				}
 			}
 			close(input_fd[1]);
 
@@ -565,7 +598,10 @@ namespace {
 		}
 
 		int input_fd[2];
-		pipe(input_fd); // Where the parent is going to write to
+		if (pipe(input_fd) == -1) { // Where the parent is going to write to
+			JS_ERROR("Failed to pipe input (fork)");
+			return;
+		}
 
 		int pid = fork();
 		switch (pid) {
@@ -592,7 +628,10 @@ namespace {
 			close(input_fd[0]); // These are being used by the child
 			if (arg_count >= 2) {
 				v8::String::Utf8Value input_arg(JS_ISOLATE, args[1]);
-				write(input_fd[1], *input_arg, input_arg.length()); // Write to child’s stdin
+				if (write(input_fd[1], *input_arg, input_arg.length()) == -1) { // Write to child’s stdin
+					JS_ERROR("Failed to write to child's stdin (fork)");
+					return;
+				}
 			}
 			close(input_fd[1]);
 			args.GetReturnValue().SetUndefined();

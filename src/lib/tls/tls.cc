@@ -172,7 +172,7 @@ JS_METHOD(_connect) {
 		args.GetReturnValue().Set(args.This());
 	} else {
 		printf("%d\n", result);
-		printf(formatError(ssl, result).c_str());
+		printf("%s", formatError(ssl, result).c_str());
 		SSL_ERROR(ssl, result);
 	}
 }
@@ -303,9 +303,9 @@ JS_METHOD(_receive_strict) {
 					//if (debug) {
 						//std::cout << "TLS FILE READING BODY: " << std::endl;
 					//}
-					int result = fwrite(tmp, sizeof(char), len, fileToWrite);
+					size_t result = fwrite(tmp, sizeof(char), len, fileToWrite);
 					fflush(fileToWrite);
-					if (result != len) {
+					if ((int)result != len) {
 						JS_ERROR("Internal problem was encountered while writing to file");
 						return;
 					}
@@ -328,8 +328,8 @@ JS_METHOD(_receive_strict) {
 						}
 						readHeaderAlready = true;
 						// drop all after "\r\n\r\n" to file
-						int sizeToFile = header->getLength() - (int)(p + 4 - header->getData());
-						int result = fwrite(p + 4, sizeof(char), sizeToFile, fileToWrite);
+						size_t sizeToFile = header->getLength() - (int)(p + 4 - header->getData());
+						size_t result = fwrite(p + 4, sizeof(char), sizeToFile, fileToWrite);
 						fflush(fileToWrite);
 						if (result != sizeToFile) {
 							JS_ERROR("Internal problem was encountered while writing to file");

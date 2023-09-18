@@ -104,7 +104,7 @@ JS_METHOD(_getPrefixKey) {
 
   v8::HandleScope handle_scope(JS_ISOLATE);
 
-  v8::Local<v8::String> result = JS_STR_LEN(value, strlen(value));
+  v8::Local<v8::String> result = JS_STR_LEN(value, (int)strlen(value));
 
   args.GetReturnValue().Set(result);
 }
