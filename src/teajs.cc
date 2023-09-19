@@ -142,7 +142,6 @@ private:
 				default:
 					//JS_ERROR(err.c_str());
 					throw err;
-				break;
 			}
 			
 		} 
@@ -196,7 +195,6 @@ void MAIN_DEBUG(const char*str)
 }
 
 int main(int argc, char ** argv) {
-	char tmp[1024];
 	MAIN_DEBUG("step 0");
 	//sprintf(tmp,"FCGX_IsCGI=%d",FCGX_IsCGI());MAIN_DEBUG(tmp);
 	TeaJS_CGI cgi;

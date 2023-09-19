@@ -280,7 +280,7 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 					}
 					// TODO vahvarh throw
 					throw error;
-				} break;
+				};
 			}
 		}
 	} while (result == (size_t)(-1));

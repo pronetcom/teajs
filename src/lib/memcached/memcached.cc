@@ -104,7 +104,7 @@ JS_METHOD(_getPrefixKey) {
 
   v8::HandleScope handle_scope(JS_ISOLATE);
 
-  v8::Local<v8::String> result = JS_STR_LEN(value, strlen(value));
+  v8::Local<v8::String> result = JS_STR_LEN(value, (int)strlen(value));
 
   args.GetReturnValue().Set(result);
 }
@@ -356,8 +356,14 @@ JS_METHOD(_get) {
 
   v8::HandleScope handle_scope(JS_ISOLATE);
   v8::Local<v8::Array> js_array = v8::Array::New(JS_ISOLATE, 2);
-  js_array->Set(JS_CONTEXT,JS_INT(0), JS_STR_LEN(rvalue, rlength));
-  js_array->Set(JS_CONTEXT,JS_INT(1), JS_INT(rflags));
+  if (!js_array->Set(JS_CONTEXT,JS_INT(0), JS_STR_LEN(rvalue, (int)rlength)).ToChecked()) {
+    JS_ERROR("memcached internal error (_get) in method Set (360)");
+    return;
+  }
+  if (!js_array->Set(JS_CONTEXT,JS_INT(1), JS_INT(rflags)).ToChecked()) {
+    JS_ERROR("memcached internal error (_get) in method Set (364)");
+    return;
+  }
 
   free(rvalue);
 
@@ -505,14 +511,35 @@ JS_METHOD(_mget) {
     // Encode 64bit CAS value into two 32bit integers so they do not
     // exceed the 52bit integer range of Javascript integers.
     v8::Local<v8::Array> js_cas = v8::Array::New(JS_ISOLATE, 2);
-    js_cas->Set(JS_CONTEXT,JS_INT(0), JS_INT(cas >> 32));
-    js_cas->Set(JS_CONTEXT,JS_INT(1), JS_INT(cas & 0xFFFFFFFF));
+    if (!js_cas->Set(JS_CONTEXT,JS_INT(0), JS_INT(cas >> 32)).ToChecked()) {
+      JS_ERROR("memcached internal error (_mget) in method Set (515)");
+      return;
+    }
+    if (!js_cas->Set(JS_CONTEXT,JS_INT(1), JS_INT(cas & 0xFFFFFFFF)).ToChecked()) {
+      JS_ERROR("memcached internal error (_mget) in method Set (519)");
+      return;
+    }
 
-    js_return_value->Set(JS_CONTEXT,JS_INT(0), JS_STR_LEN(return_key, return_key_length));
-    js_return_value->Set(JS_CONTEXT,JS_INT(1), JS_STR_LEN(return_value, return_value_length));
-    js_return_value->Set(JS_CONTEXT,JS_INT(2), JS_INT(flags));
-    js_return_value->Set(JS_CONTEXT,JS_INT(3), js_cas);
-    js_array->Set(JS_CONTEXT,JS_INT(i), js_return_value);
+    if (!js_return_value->Set(JS_CONTEXT,JS_INT(0), JS_STR_LEN(return_key, (int)return_key_length)).ToChecked()) {
+      JS_ERROR("memcached internal error (_mget) in method Set (524)");
+      return;
+    }
+    if (!js_return_value->Set(JS_CONTEXT,JS_INT(1), JS_STR_LEN(return_value, (int)return_value_length)).ToChecked()) {
+      JS_ERROR("memcached internal error (_mget) in method Set (528)");
+      return;
+    }
+    if (!js_return_value->Set(JS_CONTEXT,JS_INT(2), JS_INT(flags)).ToChecked()) {
+      JS_ERROR("memcached internal error (_mget) in method Set (532)");
+      return;
+    }
+    if (!js_return_value->Set(JS_CONTEXT,JS_INT(3), js_cas).ToChecked()) {
+      JS_ERROR("memcached internal error (_mget) in method Set (536)");
+      return;
+    }
+    if (!js_array->Set(JS_CONTEXT,JS_INT(i), js_return_value).ToChecked()) {
+      JS_ERROR("memcached internal error (_mget) in method Set (540)");
+      return;
+    }
     i++;
   }
   // According to examples in the memcached tests, and my interpretation of
@@ -562,7 +589,7 @@ JS_METHOD(_behaviorGet) {
   memcached_behavior_t behavior = (memcached_behavior_t)args[0]->Uint32Value(JS_CONTEXT).ToChecked();
 
   uint64_t data = memcached_behavior_get(memc, behavior);
-  args.GetReturnValue().Set(JS_INT(data));
+  args.GetReturnValue().Set(JS_INT((int)data));
 }
 
 } /* end namespace */

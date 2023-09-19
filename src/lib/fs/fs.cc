@@ -142,7 +142,7 @@ JS_METHOD(_open) {
 
 	char* cName = *name;
 	bool isFd = true;
-	long fd = 0;
+	int fd = 0;
 	for (int i = 0; cName[i] != 0; i++) {
 		if (cName[i] < '0' || cName[i] > '9') {
 			isFd = false;
@@ -231,7 +231,7 @@ JS_METHOD(_getBinaryContent) { // pos, length
 
 	
 	
-	size_t pos = 0, length = 0;
+	long pos = 0, length = 0;
 	if (args.Length() && args[0]->IsNumber()) {
 		pos = args[0]->IntegerValue(JS_CONTEXT).ToChecked();
 	}
@@ -262,7 +262,7 @@ JS_METHOD(_getBinaryContent) { // pos, length
 
 	(void)ret->Set(JS_CONTEXT, JS_STR("result"), JS_STR(buff));
 
-	(void)ret->Set(JS_CONTEXT, JS_STR("length"), JS_INT(length));
+	(void)ret->Set(JS_CONTEXT, JS_STR("length"), JS_INT((int)length));
 
 	args.GetReturnValue().Set(ret);
 }
@@ -276,7 +276,7 @@ JS_METHOD(_ftell) {
 	}
 	FILE* f = LOAD_PTR(1, FILE*);
 
-	args.GetReturnValue().Set(JS_INT(std::ftell(f)));
+	args.GetReturnValue().Set(JS_INT((int)std::ftell(f)));
 }
 
 JS_METHOD(_fseek) {
@@ -314,7 +314,7 @@ JS_METHOD(_fseek) {
 		}
 	}
 
-	args.GetReturnValue().Set(JS_INT(std::fseek(f, pos, origin)));
+	args.GetReturnValue().Set(JS_INT((int)std::fseek(f, pos, (int)origin)));
 }
 
 JS_METHOD(_readNonblock) {
