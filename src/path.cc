@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <stdexcept>
+#include <string.h>
 
 #ifdef windows
 #	include <io.h>
@@ -23,7 +23,11 @@
 std::string path_normalize(std::string path) {
 	char * p = new char[PATH_MAX];
 	if (realpath(path.c_str(), p) == NULL) {
-		throw std::invalid_argument("path_normalize invalid path");
+		if (const char* env_d = std::getenv("PRINT_DEBUGS")) {
+			if (strcmp(env_d, "1") == 0) {
+				printf("Invalid argument provided to path_normalize (src/path.cc 28)");
+			}
+		}
 	}
 	std::string result(p);
 	delete[] p;
