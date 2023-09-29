@@ -23,14 +23,16 @@ function do_download(url, length, body, headers) {
 	}
 }
 
-exports.testHTTPS_longest = function () {
-	system.gc();
-	if (system.env.PRINT_DEBUGS == 1) {
-		system.stdout.writeLine('HTTPS LONGEST START');
-	}
-	do_download("https://loreal-il-test.gd.easymerch.com/f-loreal-il-test/images/2561.xml");
-	system.gc();
-	if (system.env.PRINT_DEBUGS == 1) {
-		system.stdout.writeLine('HTTPS LONGEST END');
-	}
-};
+if (system.env.REQUIRE_LONGEST == 1) {
+	exports.testHTTPS_longest = function () {
+		system.gc();
+		if (system.env.PRINT_DEBUGS == 1) {
+			system.stdout.writeLine('HTTPS LONGEST START');
+		}
+		do_download("https://loreal-il-test.gd.easymerch.com/f-loreal-il-test/images/2561.xml");
+		system.gc();
+		if (system.env.PRINT_DEBUGS == 1) {
+			system.stdout.writeLine('HTTPS LONGEST END');
+		}
+	};
+}

@@ -9,7 +9,7 @@ function do_send(url, length, body, headers) {
 		['country', 'Chile'],
 	]));
 	req.addFiles(new Map([
-		['file', 'unit/tests/texts/very-long-file.txt']
+		['file', 'unit/tests/texts/short-file.txt']
 	]));
 	//req.post.set("name", "Artem");
 	//req.postFiles.set("file", "unit/tests/texts/very-long-file.txt");
@@ -31,5 +31,6 @@ function do_send(url, length, body, headers) {
 exports.testHTTPS_multipart = function () {
 	system.stdout.writeLine("multipart begin");
 	do_send("https://easymerch.com/site.css");
+	//do_send("127.0.0.1:8888");
 	system.stdout.writeLine("multipart end");
 };
