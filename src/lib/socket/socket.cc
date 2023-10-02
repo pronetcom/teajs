@@ -752,8 +752,8 @@ JS_METHOD(_settimeout) {
 	int value = args[0]->Int32Value(JS_CONTEXT).ToChecked();
 
 	timeval tv;
-    tv.tv_sec = value / 1000000;
-    tv.tv_usec = value % 1000000;
+    tv.tv_sec = value / 1000;
+    tv.tv_usec = (value % 1000) * 1000;
 	
 	int result = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *) &tv, sizeof(tv));
 	if (result) {
