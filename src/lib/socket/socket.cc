@@ -742,6 +742,27 @@ JS_METHOD(_setoption) {
 	}
 }
 
+JS_METHOD(_settimeout) {
+	if (args.Length() != 1) {
+		JS_TYPE_ERROR("Bad argument count. Use 'socket.setOption(name, value)'");
+		return;
+	}
+	
+	int sock = LOAD_VALUE(0)->Int32Value(JS_CONTEXT).ToChecked();
+	int value = args[0]->Int32Value(JS_CONTEXT).ToChecked();
+
+	timeval tv;
+    tv.tv_sec = value / 1000000;
+    tv.tv_usec = value % 1000000;
+	
+	int result = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *) &tv, sizeof(tv));
+	if (result) {
+		FormatError();
+	} else {
+		args.GetReturnValue().Set(args.This());
+	}
+}
+
 JS_METHOD(_getoption) {
 	if (args.Length() < 1) {
 		JS_TYPE_ERROR("Bad argument count. Use 'socket.getOption(name)'");
@@ -891,6 +912,7 @@ SHARED_INIT() {
 	pt->Set(JS_ISOLATE,"accept"			, v8::FunctionTemplate::New(JS_ISOLATE, _accept));
 	pt->Set(JS_ISOLATE,"close"			, v8::FunctionTemplate::New(JS_ISOLATE, _socketclose));
 	pt->Set(JS_ISOLATE,"setOption"		, v8::FunctionTemplate::New(JS_ISOLATE, _setoption));
+	pt->Set(JS_ISOLATE,"setTimeout"		, v8::FunctionTemplate::New(JS_ISOLATE, _settimeout));
 	pt->Set(JS_ISOLATE,"getOption"		, v8::FunctionTemplate::New(JS_ISOLATE, _getoption));
 	pt->Set(JS_ISOLATE,"setBlocking"	, v8::FunctionTemplate::New(JS_ISOLATE, _setblocking));
 	pt->Set(JS_ISOLATE,"getPeerName"	, v8::FunctionTemplate::New(JS_ISOLATE, _getpeername));
