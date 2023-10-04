@@ -154,7 +154,10 @@ def get_libraries_by_path(params,dep,path):
 def resolve_3rd_party_item(params,dep):
     if params["resolve"]=="pkg-config":
         try:
-            params[dep["name"].upper()+'_INCLUDE']=subprocess.check_output('pkg-config --cflags '+dep["name_pkg_config"], shell=True).decode("utf-8").split("\n")[0]
+            if dep["name"] != "gd":
+                params[dep["name"].upper()+'_INCLUDE']=subprocess.check_output('pkg-config --cflags '+dep["name_pkg_config"], shell=True).decode("utf-8").split("\n")[0]
+            else:
+                params[dep["name"].upper()+'_INCLUDE']=""
             params[dep["name"].upper()+'_LIBRARY']=subprocess.check_output('pkg-config --libs '  +dep["name_pkg_config"], shell=True).decode("utf-8").split("\n")[0]
         except:
             if "fallback_if_no_pkg" in dep and dep["fallback_if_no_pkg"] == 1:
