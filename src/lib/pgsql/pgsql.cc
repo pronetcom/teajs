@@ -151,6 +151,8 @@ v8::Local<v8::Array> fetch_any(PGresult *res,int lineno,bool fetch_objects)
 				case 23:
 					(void)item->Set(JS_CONTEXT,fieldnames->Get(JS_CONTEXT,JS_INT(j)).ToLocalChecked(), JS_STR(PQgetvalue(res, ypg, j))->ToInteger(JS_CONTEXT).ToLocalChecked());
 					break;
+				case 700:
+				case 701:
 				case 1700:
 					(void)item->Set(JS_CONTEXT,fieldnames->Get(JS_CONTEXT,JS_INT(j)).ToLocalChecked(), JS_STR(PQgetvalue(res, ypg, j))->ToNumber(JS_CONTEXT).ToLocalChecked());
 					break;
