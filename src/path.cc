@@ -25,7 +25,7 @@ std::string path_normalize(std::string path) {
 	if (realpath(path.c_str(), p) == NULL) {
 		if (const char* env_d = std::getenv("PRINT_DEBUGS")) {
 			if (strcmp(env_d, "1") == 0) {
-				printf("Invalid argument provided to path_normalize (src/path.cc 28)");
+				//printf("Invalid argument provided to path_normalize (src/path.cc 28)");
 			}
 		}
 	}
