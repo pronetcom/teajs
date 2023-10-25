@@ -113,6 +113,10 @@ JS_METHOD(_getcwd) {
 }
 
 JS_METHOD(_getpid) {
+	args.GetReturnValue().Set(getpid());
+}
+
+JS_METHOD(_getppid) {
 	args.GetReturnValue().Set(getppid());
 }
 
@@ -250,6 +254,7 @@ void setup_system(v8::Local<v8::Object> global, char ** envp, std::string mainfi
 	
 	(void)system->Set(JS_CONTEXT,JS_STR("getcwd"), v8::FunctionTemplate::New(JS_ISOLATE, _getcwd)->GetFunction(JS_CONTEXT).ToLocalChecked());
 	(void)system->Set(JS_CONTEXT,JS_STR("getpid"), v8::FunctionTemplate::New(JS_ISOLATE, _getpid)->GetFunction(JS_CONTEXT).ToLocalChecked());
+	(void)system->Set(JS_CONTEXT,JS_STR("getppid"), v8::FunctionTemplate::New(JS_ISOLATE, _getppid)->GetFunction(JS_CONTEXT).ToLocalChecked());
 	(void)system->Set(JS_CONTEXT,JS_STR("sleep"), v8::FunctionTemplate::New(JS_ISOLATE, _sleep)->GetFunction(JS_CONTEXT).ToLocalChecked());
 	(void)system->Set(JS_CONTEXT,JS_STR("usleep"), v8::FunctionTemplate::New(JS_ISOLATE, _usleep)->GetFunction(JS_CONTEXT).ToLocalChecked());
 	(void)system->Set(JS_CONTEXT,JS_STR("gc"), v8::FunctionTemplate::New(JS_ISOLATE, _gc)->GetFunction(JS_CONTEXT).ToLocalChecked());
