@@ -35,7 +35,7 @@
 #define INSTANCEOF(obj, func) func->HasInstance(obj)
 
 #define JS_THROW(type, reason) JS_ISOLATE->ThrowException(v8::Exception::type(JS_STR(reason)))
-v8::Local<v8::Value> JS_ERROR(const char*data);
+v8::Local<v8::Value> JS_ERROR(const std::string& data);
 //#define JS_ERROR(reason) fprintf(stderr,"JS_ERROR() - %s\n",reason); JS_THROW(Error, reason)
 #define JS_TYPE_ERROR(reason) JS_THROW(TypeError, reason)
 #define JS_RANGE_ERROR(reason) JS_THROW(RangeError, reason)

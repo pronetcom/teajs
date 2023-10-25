@@ -48,9 +48,9 @@ void write_debug(const char *text)
 	}
 }
 
-v8::Local<v8::Value> JS_ERROR(const char*reason) {
-	//fprintf(stderr,"JS_ERROR() should throw - %s\n",reason);
-	return JS_THROW(Error, reason);
+v8::Local<v8::Value> JS_ERROR(const std::string& reason) {
+	//fprintf(stderr,"JS_ERROR() should throw - %s\n",reason.c_str());
+	return JS_THROW(Error, reason.c_str());
 }
 
 /**
@@ -67,8 +67,7 @@ JS_METHOD(_require) {
 		required.Reset(JS_ISOLATE, app->require(*file, root));
 		args.GetReturnValue().Set(required.Get(JS_ISOLATE));
 	} catch (std::string e) {
-		//JS_ERROR(e.c_str());
-		JS_ERROR(e.c_str());
+		JS_ERROR(e);
 	}
 }
 
@@ -161,8 +160,7 @@ void TeaJS_App::prepare(char ** envp) {
 
 	if (!paths->Length()) {
 		std::string error = "require.paths is empty, have you forgotten to push some data there?";
-		// vahvarh throw
-		throw error;
+		JS_ERROR(error);
 	}
 	
 	(void)g->Set(JS_CONTEXT,JS_STR("Config"), config->Get(JS_CONTEXT,JS_STR("Config")).ToLocalChecked());
@@ -199,20 +197,18 @@ void TeaJS_App::execute(char ** envp) {
 
 		this->prepare(envp);
 		if (tc.HasCaught()) {
-			//JS_ERROR(this->format_exception(&tc).c_str());
-			throw this->format_exception(&tc);
+			JS_ERROR(this->format_exception(&tc));
+			// throw this->format_exception(&tc);
 		} /* uncaught exception when loading config file */
 		
 		if (this->mainfile == "") {
-			//JS_ERROR("Nothing to do :)");
-			throw std::string("Nothing to do :)");
+			throw std::string("Nothing to do :)"); // here can use normal throw because it in try/catch
 		}
 
 		this->require(this->mainfile, path_getcwd()); 
 		
 		if (tc.HasCaught() && tc.CanContinue()) {
-			//JS_ERROR(this->format_exception(&tc).c_str());
-			throw this->format_exception(&tc);
+			throw this->format_exception(&tc); // here can use normal throw because it in try/catch
 		} /* uncaught exception when executing main file */
 
 	} catch (std::string e) {
@@ -223,7 +219,7 @@ void TeaJS_App::execute(char ** envp) {
 	this->finish();
 	
 	if (caught.length()) {
-		throw caught;
+		throw caught; // cannot be caught in JS (after this->finish()), so using normal
 	} // rethrow
 }
 
@@ -265,7 +261,7 @@ v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > TeaJS_App:
 		error += name;
 		error += "'";
 		//fprintf(stderr,"%s\n",error.c_str());
-		throw error;
+		JS_ERROR(error);
 	}
 
 #ifdef VERBOSE
@@ -372,7 +368,7 @@ void TeaJS_App::load_dso(std::string filename, v8::Local<v8::Function> require, 
 		std::string error = "Cannot initialize shared library '";
 		error += filename;
 		error += "'";
-		throw error;
+		JS_ERROR(error);
 	}
 	
 	func(require, exports, module);
