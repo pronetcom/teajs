@@ -7,7 +7,6 @@
 #include "bytestorage.h"
 #include "macros.h"
 
-//#define ALLOC_ERROR throw std::string("Cannot allocate enough memory")
 #define ALLOC_ERROR JS_ERROR("Cannot allocate enough memory")
 
 #if defined windows || bsd
@@ -35,8 +34,7 @@ ByteStorageData::ByteStorageData(size_t _length,size_t _allocated_length)
 		if (!this->data) {
 			//fprintf(stderr,"ByteStorageData::ByteStorageData() - Cannot allocate enough memory");
 			//exit(1);
-			// TODO vahvarh throw
-			throw std::string("Cannot allocate enough memory");
+			ALLOC_ERROR;
 		}
 	} else {
 		this->data = NULL;
@@ -211,8 +209,8 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 		error += from;
 		error += " to ";
 		error += to;
-		//JS_ERROR(error.c_str());
-		throw error;
+		JS_ERROR(error);
+		return nullptr;
 	}
 	
 	size_t allocated = this->length + (this->length/8) + 32; /* WAG */
@@ -220,6 +218,7 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 	if (!output) {
 		iconv_close(cd);
 		ALLOC_ERROR;
+		return nullptr;
 	}
 	
 	size_t inBytesLeft = this->length;
@@ -228,6 +227,7 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 	char * outBuf = output;
 
 	size_t result = 0;
+	
 	do {
 		result = iconv(cd, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft);
 		if (result == (size_t)(-1)) {
@@ -241,6 +241,7 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 						free(output);
 						iconv_close(cd);
 						ALLOC_ERROR;
+						return nullptr;
 					}
 
 					/* so far, outBuf-output bytes were used; move outBuf to this position in newOutput */
@@ -278,8 +279,9 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 							error += "unknown error";
 						break;
 					}
-					// TODO vahvarh throw
-					throw error;
+					
+					JS_ERROR(error);
+					return nullptr;
 				};
 			}
 		}

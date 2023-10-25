@@ -236,7 +236,7 @@ namespace {
 					break;
 				}
 				else if (bytes_read < 0) {
-					// TODO: throw JavaScript exception
+					JS_ERROR("Error while trying read child's output");
 					args.GetReturnValue().SetNull();
 					return;
 				}
@@ -252,7 +252,7 @@ namespace {
 					break;
 				}
 				else if (bytes_read < 0) {
-					// TODO: throw JavaScript exception
+					JS_ERROR("Error while trying read child's errput");
 					args.GetReturnValue().SetNull();
 					return;
 				}
@@ -360,64 +360,6 @@ namespace {
 			close(input_fd[0]); // These are being used by the child
 			close(out_fd[1]);
 			close(err_fd[1]);
-
-			/*
-			if (arg_count >= 2) {
-				v8::String::Utf8Value input_arg(JS_ISOLATE, args[1]);
-				/ *
-				uint32_t fd = args[1]->Uint32Value(v8::Context::New(JS_ISOLATE)).FromJust();
-				while (true) {
-					int bytes_read = (int)read(fd, buffer, MAX_BUFFER);
-					if (bytes_read == 0) {
-						break;
-					}
-					else if (bytes_read < 0) {
-						// TODO: throw JavaScript exception
-						args.GetReturnValue().SetNull();
-						return;
-					}
-					buffer[bytes_read] = 0;
-					write(input_fd[1], buffer, bytes_read);
-				}
-				* /
-				write(input_fd[1], *input_arg, input_arg.length()); // Write to child’s stdin
-			}
-			close(input_fd[1]);
-
-			std::vector<char> ret_out;
-			while (true) {
-				int bytes_read = (int)read(out_fd[0], buffer, MAX_BUFFER);
-				if (bytes_read == 0) {
-					break;
-				}
-				else if (bytes_read < 0) {
-					args.GetReturnValue().SetNull();
-					return;
-				}
-				buffer[bytes_read] = 0;
-				ret_out.insert(ret_out.end(), buffer, buffer + bytes_read);
-			}
-
-			close(out_fd[0]);
-
-			std::vector<char> ret_err;
-			while (true) {
-				int bytes_read = (int)read(err_fd[0], buffer, MAX_BUFFER);
-				if (bytes_read == 0) {
-					break;
-				}
-				else if (bytes_read < 0) {
-					args.GetReturnValue().SetNull();
-					return;
-				}
-				buffer[bytes_read] = 0;
-				ret_err.insert(ret_err.end(), buffer, buffer + bytes_read);
-			}
-			close(err_fd[0]);
-
-			int status;
-			waitpid(pid, &status, 0);
-			*/
 
 			v8::Local<v8::Object> ret = v8::Object::New(JS_ISOLATE);
 			/*
@@ -531,7 +473,7 @@ namespace {
 					break;
 				}
 				else if (bytes_read < 0) {
-					// TODO: throw JavaScript exception
+					JS_ERROR("Error while trying read child's output");
 					args.GetReturnValue().SetNull();
 					return;
 				}
@@ -547,7 +489,7 @@ namespace {
 					break;
 				}
 				else if (bytes_read < 0) {
-					// TODO: throw JavaScript exception
+					JS_ERROR("Error while trying read child's errput");
 					args.GetReturnValue().SetNull();
 					return;
 				}
