@@ -160,7 +160,7 @@ void TeaJS_App::prepare(char ** envp) {
 
 	if (!paths->Length()) {
 		std::string error = "require.paths is empty, have you forgotten to push some data there?";
-		JS_ERROR(error);
+		throw error;
 	}
 	
 	(void)g->Set(JS_CONTEXT,JS_STR("Config"), config->Get(JS_CONTEXT,JS_STR("Config")).ToLocalChecked());
@@ -197,8 +197,7 @@ void TeaJS_App::execute(char ** envp) {
 
 		this->prepare(envp);
 		if (tc.HasCaught()) {
-			JS_ERROR(this->format_exception(&tc));
-			// throw this->format_exception(&tc);
+			throw this->format_exception(&tc); // here can use normal throw because it in try/catch
 		} /* uncaught exception when loading config file */
 		
 		if (this->mainfile == "") {
@@ -261,7 +260,7 @@ v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > TeaJS_App:
 		error += name;
 		error += "'";
 		//fprintf(stderr,"%s\n",error.c_str());
-		JS_ERROR(error);
+		throw error; // in try/catch block in JS_METHOD _require, so using normal exception
 	}
 
 #ifdef VERBOSE
@@ -368,7 +367,7 @@ void TeaJS_App::load_dso(std::string filename, v8::Local<v8::Function> require, 
 		std::string error = "Cannot initialize shared library '";
 		error += filename;
 		error += "'";
-		JS_ERROR(error);
+		throw error; // used only in require, so it is in try/catch block in JS_METHOD _require, so using normal exception
 	}
 	
 	func(require, exports, module);
