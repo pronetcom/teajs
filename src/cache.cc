@@ -68,8 +68,8 @@ std::string Cache::getSource(std::string filename) {
 		std::string s = "Error reading '";
 		s += filename;
 		s += "'";
-		// vahvarh THROW
-		JS_ERROR(s); 
+		
+		throw s; 
 	}
 	
 	fseek(file, 0, SEEK_END);
@@ -139,8 +139,8 @@ void * Cache::getHandle(std::string filename) {
 			error += dlerror();
 #endif
 			error += ")";
-			// vahvarh THROW
-			JS_ERROR(error);
+			
+			throw error; // used only lrequire->load_dso, so it is in try/catch block in JS_METHOD _require, so using normal exception
 		}
 		this->mark(filename); /* mark as cached */
 		handles[filename] = handle;

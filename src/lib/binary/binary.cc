@@ -83,9 +83,14 @@ void Buffer_fromString(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	v8::String::Utf8Value charset(JS_ISOLATE,args[1]);
 	
 	ByteStorage bs_tmp((char *) (*str), str.length());
-	ByteStorage * bs = bs_tmp.transcode("utf-8", *charset);
-	SAVE_PTR(0, bs);
-	args.GetReturnValue().Set(v8::Local<v8::Value>());
+	try
+	{
+		ByteStorage * bs = bs_tmp.transcode("utf-8", *charset);
+		SAVE_PTR(0, bs);
+		args.GetReturnValue().Set(v8::Local<v8::Value>());
+	} catch (std::string e) {
+		JS_ERROR(e);
+	}
 }
 
 void Buffer_fromArray(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -142,7 +147,7 @@ JS_METHOD(_Buffer) {
 			return;
 		}
 	} catch (std::string e) {
-		JS_ERROR(e.c_str());
+		JS_ERROR(e);
 		return;
 	}
 	
@@ -186,7 +191,7 @@ JS_METHOD(Buffer_toString) {
 		delete bs2;
 		args.GetReturnValue().Set(result);
 	} catch (std::string e) {
-		JS_ERROR(e.c_str());
+		JS_ERROR(e);
 	}
 }
 

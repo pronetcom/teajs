@@ -7,7 +7,7 @@
 #include "bytestorage.h"
 #include "macros.h"
 
-#define ALLOC_ERROR JS_ERROR("Cannot allocate enough memory")
+#define ALLOC_ERROR throw std::string("Cannot allocate enough memory")
 
 #if defined windows || bsd
 #	define ICONV_INPUT_T const char * 
@@ -209,8 +209,7 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 		error += from;
 		error += " to ";
 		error += to;
-		JS_ERROR(error);
-		return nullptr;
+		throw error;
 	}
 	
 	size_t allocated = this->length + (this->length/8) + 32; /* WAG */
@@ -218,7 +217,6 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 	if (!output) {
 		iconv_close(cd);
 		ALLOC_ERROR;
-		return nullptr;
 	}
 	
 	size_t inBytesLeft = this->length;
@@ -241,7 +239,6 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 						free(output);
 						iconv_close(cd);
 						ALLOC_ERROR;
-						return nullptr;
 					}
 
 					/* so far, outBuf-output bytes were used; move outBuf to this position in newOutput */
@@ -280,8 +277,7 @@ ByteStorage * ByteStorage::transcode(const char * from, const char * to) {
 						break;
 					}
 					
-					JS_ERROR(error);
-					return nullptr;
+					throw error;
 				};
 			}
 		}
