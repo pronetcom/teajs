@@ -7,7 +7,6 @@ function do_download(url,length,body,headers)
 	var req = new http.ClientRequest(url);
 
 	req.setTimeout(2000);
-	//req.setSkipPort(true);
 
 	var resp=req.send(false);
 	if (length>=0) {

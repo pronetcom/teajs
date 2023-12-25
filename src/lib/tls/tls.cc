@@ -439,30 +439,19 @@ JS_METHOD(_close) {
 
 JS_METHOD(_setTLSMethod) {
 	if (args.Length() < 1) { SSL_CTX_set_min_proto_version(ctx, 3); return; }
-	if (args[0]->IsUint32()) {
-		v8::Local<v8::Context> context = v8::Context::New(JS_ISOLATE);
-		v8::Maybe<uint32_t> maybe_uint = args[0]->Uint32Value(context);
-		if (maybe_uint.IsJust()) {
-			uint32_t method = maybe_uint.FromJust();
-			SSL_CTX_set_min_proto_version(ctx, method);
-		}
-		else {
-			JS_ERROR("setTLSMethod: failed conversion\n");
-		}
+	if (args[0]->IsNumber()) {
+		SSL_CTX_set_min_proto_version(ctx, args[0]->IntegerValue(JS_CONTEXT).ToChecked());
+		return;
 	}
 	else {
-		JS_ERROR("setTLSMethod: wrong type\n");
+		JS_ERROR("setTLSMethod: Non-integer argument");
+		return;
 	}
 }
 
 JS_METHOD(_setCertificateCheck) {
 	if (args.Length() != 1) { JS_ERROR("_setCertificateCheck: wrong number of arguments"); }
-	if (args[0]->IsBooleanObject()) {
-		needToCheckCertificate = args[0]->BooleanValue(JS_ISOLATE);
-	}
-	else {
-		JS_ERROR("setTLSMethod: wrong type\n");
-	}
+	needToCheckCertificate = args[0]->ToBoolean(JS_ISOLATE)->BooleanValue(JS_ISOLATE);
 }
 
 JS_METHOD(_setSNI) {
