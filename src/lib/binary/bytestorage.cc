@@ -1,9 +1,9 @@
 #include <v8.h>
 #include <cerrno>
-#include <string.h>
+#include <cstring>
 #include <string>
 #include <iconv.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include "bytestorage.h"
 #include "macros.h"
 

@@ -6,11 +6,11 @@
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <limits.h>
-#include <stdlib.h>
+#include <climits>
+#include <cstdlib>
 #include <unistd.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #ifdef windows
 #	include <io.h>

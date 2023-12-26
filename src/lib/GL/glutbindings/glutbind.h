@@ -25,7 +25,7 @@
 #define GLUT_WINGDIAPI_DEFINED 1
 #endif
 
-#include <stdio.h>
+#include <cstdio>
 #include <map>
 using namespace std;
 using namespace v8;

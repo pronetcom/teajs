@@ -18,7 +18,7 @@
 #include <GL/glut.h>
 #endif
 
-#include <stdio.h>
+#include <cstdio>
 
 using namespace std;
 using namespace v8;

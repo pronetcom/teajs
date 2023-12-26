@@ -3,7 +3,6 @@
 
 #include <v8.h>
 #include <string>
-#include <stdlib.h>
 
 class ByteStorage;
 class ByteStorageData {

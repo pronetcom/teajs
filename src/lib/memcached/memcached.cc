@@ -3,7 +3,7 @@
 #include "gc.h"
 
 #include <libmemcached/memcached.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <string>
 #include <cstring>
 

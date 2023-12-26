@@ -6,16 +6,15 @@
 #include "macros.h"
 #include "common.h"
 
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
+#include <cstdlib>
+#include <cerrno>
+#include <cstring>
 #include <fcntl.h>
 //#include <in.h>
 
 #include <iostream>
 #include <string>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
 
 #ifdef windows
 #  include <winsock2.h>

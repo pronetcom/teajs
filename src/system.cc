@@ -1,8 +1,8 @@
 #include <assert.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include <v8.h>
 #include <string>

@@ -4,12 +4,12 @@
 
 #include <v8.h>
 #include <v8-debug.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include "app.h"
 #include "macros.h"
 #include "path.h"
-#include <signal.h>
+#include <csignal>
 
 #if defined(FASTCGI) || defined(FASTCGI_JS)
 #  include <fcgi_stdio.h>

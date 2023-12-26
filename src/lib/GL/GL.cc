@@ -7,13 +7,13 @@
  *	Initial version: 2009-10-07, Ryan RAFFERTY
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <map>
-#include <stdio.h>
+#include <cstdio>
 #ifndef __APPLE__
 #include <stropts.h>
 #endif
-#include <string.h>
+#include <cstring>
 #include <sstream>
 
 #include <v8.h>

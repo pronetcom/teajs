@@ -9,8 +9,8 @@
 #include <sys/syscall.h>
 
 #include <string>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include "macros.h"
 #include "common.h"
 #include "path.h"
