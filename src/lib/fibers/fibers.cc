@@ -3,7 +3,7 @@
 #include "macros.h"
 
 #include <pthread.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <string>
 
 // Adds a fiber API to TeaJS.

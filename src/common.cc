@@ -1,13 +1,13 @@
 #ifdef HAVE_MMAN_H
 #  include <sys/mman.h>
 #  include <sys/stat.h>
-#  include <string.h>
+#  include <cstring>
 #  include <unistd.h>
 #  include <fcntl.h>
 #else
-#  include <stdio.h>
+#  include <cstdio>
 #endif
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "common.h"
 

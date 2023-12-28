@@ -4,10 +4,10 @@
  *	Initial version: 2009-09-03, Ryan RAFFERTY
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <map>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <sstream>
 
 #include <v8.h>

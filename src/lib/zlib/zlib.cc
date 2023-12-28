@@ -1,7 +1,7 @@
 #include <v8.h>
 #include <zlib.h>
 #include "macros.h"
-#include "string.h"
+#include <cstring>
 
 namespace {
 

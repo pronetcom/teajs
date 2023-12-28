@@ -7,7 +7,7 @@
 #include <vector>
 #include "macros.h"
 #include "common.h"
-#include <stdlib.h>
+#include <cstdlib>
 #include <unistd.h>
 #include <vector>
 #include <fcntl.h>

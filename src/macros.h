@@ -4,7 +4,7 @@
 #ifndef _JS_MACROS_H
 #define _JS_MACROS_H
 
-#include <string.h>
+#include <cstring>
 #include <unistd.h>
 #include "app.h"
 #include "lib/binary/bytestorage.h"

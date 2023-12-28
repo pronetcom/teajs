@@ -11,12 +11,12 @@
  * 	Minor segfault fixes Ondrej ZARA
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <unistd.h>
 #include <map>
 #include <memory>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <sstream>
 
 #include <v8.h>

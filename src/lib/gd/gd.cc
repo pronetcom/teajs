@@ -2,8 +2,8 @@
 #include "macros.h"
 #include "common.h"
 
-#include <errno.h>
-#include <string.h>
+#include <cerrno>
+#include <cstring>
 #include <gd.h>
 #include <sys/types.h>
 #include <sys/stat.h>

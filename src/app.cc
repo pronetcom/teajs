@@ -7,9 +7,9 @@
 #include <sstream>
 #include <vector>
 #include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <v8.h>
 #include <libplatform/libplatform.h>
 

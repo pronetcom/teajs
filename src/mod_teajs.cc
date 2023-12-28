@@ -2,8 +2,8 @@
  * TeaJS - apache module. 
  * Extends TeaJS_App by adding customized initialization and (std)IO routines
  */
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "httpd.h"
 #include "http_config.h"
