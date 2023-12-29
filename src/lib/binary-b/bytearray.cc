@@ -186,7 +186,7 @@ void ByteArray_init(v8::Local<v8::FunctionTemplate> binaryTemplate) {
 
 	v8::Local<v8::ObjectTemplate> byteArrayObject = byteArrayTemplate->InstanceTemplate();
 	byteArrayObject->SetInternalFieldCount(1);	
-	byteArrayObject->SetAccessor(JS_STR("length"), Binary_length, _length, v8::Local<v8::Value>(), v8::DEFAULT, static_cast<v8::PropertyAttribute>(v8::DontDelete));
+	byteArrayObject->SetAccessor(JS_STR("length"), Binary_length, _length, v8::Local<v8::Value>(), static_cast<v8::PropertyAttribute>(v8::DontDelete));
 	byteArrayObject->SetIndexedPropertyHandler(_get, _set);
 
 	v8::Local<v8::ObjectTemplate> byteArrayPrototype = byteArrayTemplate->PrototypeTemplate();

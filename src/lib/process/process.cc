@@ -601,7 +601,7 @@ SHARED_INIT() {
 #ifndef windows
 	process->Set(JS_ISOLATE, "exec2", v8::FunctionTemplate::New(JS_ISOLATE, _exec2));
 	process->Set(JS_ISOLATE, "exec3", v8::FunctionTemplate::New(JS_ISOLATE, _exec3));
-	process->Set(JS_ISOLATE, "open3", v8::FunctionTemplate::New(JS_ISOLATE, _exec2));
+	process->Set(JS_ISOLATE, "open3", v8::FunctionTemplate::New(JS_ISOLATE, _open3));
 	process->Set(JS_ISOLATE, "fork", v8::FunctionTemplate::New(JS_ISOLATE, _fork));
 #endif
 
