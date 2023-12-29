@@ -355,7 +355,7 @@ SHARED_INIT() {
 
 	v8::Local<v8::ObjectTemplate> bufferObject = bufferTemplate->InstanceTemplate();
 	bufferObject->SetInternalFieldCount(1);	
-	bufferObject->SetAccessor(JS_STR("length"), Buffer_length, 0, v8::Local<v8::Value>(), v8::DEFAULT, static_cast<v8::PropertyAttribute>(v8::DontDelete));
+	bufferObject->SetAccessor(JS_STR("length"), Buffer_length, 0, v8::Local<v8::Value>(), static_cast<v8::PropertyAttribute>(v8::DontDelete));
 	bufferObject->SetIndexedPropertyHandler(Buffer_get, Buffer_set);
 
 	(void)exports->Set(JS_CONTEXT,JS_STR("Buffer"), bufferTemplate->GetFunction(JS_CONTEXT).ToLocalChecked());

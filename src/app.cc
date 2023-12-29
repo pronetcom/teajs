@@ -455,7 +455,6 @@ std::string TeaJS_App::format_exception(v8::TryCatch* try_catch) {
 	v8::String::Utf8Value exception(JS_ISOLATE,try_catch->Exception());
 	v8::Local<v8::Message> message = try_catch->Message();
 	std::string msgstring = "";
-	std::stringstream ss;
 
 	if (message.IsEmpty()) {
 		msgstring += *exception;
@@ -466,8 +465,7 @@ std::string TeaJS_App::format_exception(v8::TryCatch* try_catch) {
 		msgstring += " (";
 		msgstring += *filename;
 		msgstring += ":";
-		ss << linenum;
-		msgstring += ss.str();
+		msgstring += std::to_string(linenum);
 		msgstring += ")";
 		
 		if (!try_catch->StackTrace(JS_CONTEXT).IsEmpty()) {

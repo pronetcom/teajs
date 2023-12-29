@@ -114,7 +114,7 @@ void ByteString_init(v8::Local<v8::FunctionTemplate> binaryTemplate) {
 	
 	v8::Local<v8::ObjectTemplate> byteStringObject = byteStringTemplate->InstanceTemplate();
 	byteStringObject->SetInternalFieldCount(1);	
-	byteStringObject->SetAccessor(JS_STR("length"), Binary_length, 0, v8::Local<v8::Value>(), v8::DEFAULT, static_cast<v8::PropertyAttribute>(v8::ReadOnly | v8::DontDelete));
+	byteStringObject->SetAccessor(JS_STR("length"), Binary_length, 0, v8::Local<v8::Value>(), static_cast<v8::PropertyAttribute>(v8::ReadOnly | v8::DontDelete));
 	byteStringObject->SetIndexedPropertyHandler(_get);
 
 	v8::Local<v8::ObjectTemplate> byteStringPrototype = byteStringTemplate->PrototypeTemplate();
