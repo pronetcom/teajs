@@ -154,6 +154,7 @@ JS_METHOD(_save) {
 
 		case GD_WEBP:
 			data = gdImageWebpPtr(ptr, &size);
+		break;
 
 		default:
 			JS_TYPE_ERROR("Unknown image type");
