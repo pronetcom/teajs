@@ -15,6 +15,7 @@
 #define GD_PNG 3
 #define GD_GIF 4
 #define GD_ANY 5
+#define GD_WEBP 6
 #define GD_PTR gdImagePtr ptr = LOAD_PTR(0, gdImagePtr)
 #define GD_COLOR(offset) int color = args[offset]->Int32Value(JS_CONTEXT).ToChecked()
 #define GD_RGB \
@@ -79,6 +80,7 @@ JS_METHOD(_image) {
 		case GD_JPEG:
 		case GD_PNG:
 		case GD_GIF:
+		case GD_WEBP:
 			{
 				v8::String::Utf8Value name(JS_ISOLATE,args[1]);
 				struct stat statbuf;
@@ -149,6 +151,9 @@ JS_METHOD(_save) {
 		case GD_PNG:
 			data = gdImagePngPtr(ptr, &size);
 		break;
+
+		case GD_WEBP:
+			data = gdImageWebpPtr(ptr, &size);
 
 		default:
 			JS_TYPE_ERROR("Unknown image type");
@@ -800,6 +805,7 @@ SHARED_INIT() {
 	ft->Set(JS_ISOLATE,"PNG"				, JS_INT(GD_PNG));
 	ft->Set(JS_ISOLATE,"GIF"				, JS_INT(GD_GIF));
 	ft->Set(JS_ISOLATE,"ANY"				, JS_INT(GD_ANY));
+	ft->Set(JS_ISOLATE,"WEBP"				, JS_INT(GD_WEBP));
 	ft->Set(JS_ISOLATE,"ARC_ARC"			, JS_INT(gdArc));
 	ft->Set(JS_ISOLATE,"ARC_PIE"			, JS_INT(gdPie));
 	ft->Set(JS_ISOLATE,"ARC_CHORD"			, JS_INT(gdChord));
