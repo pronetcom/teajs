@@ -20,11 +20,12 @@ ifeq ($(uname_s),Darwin)
 	${V8_BASEDIR}/out/$(arch).release/obj/buildtools/third_party/libc++/libc++/*.o \
 	${V8_BASEDIR}/out/$(arch).release/obj/buildtools/third_party/libc++abi/libc++abi/*.o
     ifeq ($(uname_m),arm64)
-	CFLAGS += -I/opt/homebrew/opt/openssl/include -I/opt/homebrew/opt/gd/include -isystem/usr/include/
-        LDFLAGS += -L/opt/homebrew/opt/openssl/lib -L/opt/homebrew/opt/gd/lib -liconv
+	CFLAGS += -I/opt/homebrew/opt/openssl/include -I/opt/homebrew/opt/gd/include -isystem/usr/include/ -Dexecvpe=execve
+        LDFLAGS += -L/opt/homebrew/opt/openssl/lib -L/opt/homebrew/opt/gd/lib -L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/ -liconv
+		export PATH="/opt/homebrew/opt/libiconv/bin:$PATH"
     else
-	CFLAGS += -I/usr/local/opt/openssl/include -I/usr/local/opt/gd/include -isystem/usr/include/
-        LDFLAGS += -L/usr/local/opt/openssl/lib -L/usr/local/opt/gd/lib -liconv
+	CFLAGS += -I/usr/local/opt/openssl/include -I/usr/local/opt/gd/include -isystem/usr/include/ -Dexecvpe=execve
+        LDFLAGS += -L/usr/local/opt/openssl/lib -L/usr/local/opt/gd/lib -L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/ -liconv
     endif
 endif
 
