@@ -171,8 +171,10 @@ JS_METHOD(_connect) {
 		}
 		args.GetReturnValue().Set(args.This());
 	} else {
-		printf("%d\n", result);
-		printf("%s", formatError(ssl, result).c_str());
+		//printf("%d\n", result);
+		//printf("%s", formatError(ssl, result).c_str());
+		std::cerr << result << "\n";
+		std::cerr << formatError(ssl, result).c_str() << "\n";
 		SSL_ERROR(ssl, result);
 	}
 }
