@@ -440,14 +440,15 @@ JS_METHOD(_close) {
 }
 
 JS_METHOD(_setTLSMethod) {
-	if (args.Length() < 1) { SSL_CTX_set_min_proto_version(ctx, 3); return; }
+	SSL * ssl = LOAD_SSL;
+	if (args.Length() < 1) { SSL_set_min_proto_version(ssl, 772); return; }
 	if (args[0]->IsNumber()) {
 		int method = args[0]->IntegerValue(JS_CONTEXT).ToChecked();
 		if (method != TLS1_VERSION && method != TLS1_1_VERSION && method != TLS1_2_VERSION && method != TLS1_3_VERSION) {
 			JS_ERROR("Invalid version of TLS Method");
 			return;
 		}
-		if (SSL_CTX_set_min_proto_version(ctx, method) != 1) {
+		if (SSL_set_min_proto_version(ssl, method) != 1) {
 			JS_ERROR("Internal error in SSL_CTX_set_min_proto_version");
 		}
 		return;
