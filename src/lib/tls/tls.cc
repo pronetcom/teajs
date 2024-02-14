@@ -12,6 +12,7 @@
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+ #include <openssl/rsa.h>
 
 #ifdef windows
 #  define sock_errno WSAGetLastError()
@@ -471,6 +472,183 @@ JS_METHOD(_setSNI) {
 	SSL_set_tlsext_host_name(ssl, *hostname);
 }
 
+RSA* createPrivateRSA(std::string key) {
+	RSA* rsa = NULL;
+	const char* c_string = key.c_str();
+	BIO* keybio = BIO_new_mem_buf((void*)c_string, -1);
+	if (keybio==NULL) {
+    	return 0;
+	}
+	rsa = PEM_read_bio_RSAPrivateKey(keybio, &rsa,NULL, NULL);
+	return rsa;
+}
+
+RSA* createPublicRSA(std::string key) {
+	RSA* rsa = NULL;
+	BIO* keybio;
+	const char* c_string = key.c_str();
+	keybio = BIO_new_mem_buf((void*)c_string, -1);
+	if (keybio==NULL) {
+    	return 0;
+	}
+	rsa = PEM_read_bio_RSA_PUBKEY(keybio, &rsa,NULL, NULL);
+	return rsa;
+}
+
+JS_METHOD(_RSASign) { // Buffer key, Buffer message (old one)std::string key, const unsigned char* Msg, size_t MsgLen ////results//// unsigned char** EncMsg, size_t* MsgLenEnc
+	if (args.Length() != 2) {
+		JS_ERROR("_RSASign: wrong number of arguments");
+		return;
+	}
+	if (!IS_BUFFER(args[0])) {
+		JS_ERROR("_RSASign: first argument is not Buffer");
+		return;
+	}
+	if (!IS_BUFFER(args[1])) {
+		JS_ERROR("_RSASign: second argument is not Buffer");
+		return;
+	}
+	size_t KeyLen;
+	size_t MsgLen;
+	char* key = JS_BUFFER_TO_CHAR(args[0], &KeyLen);
+	unsigned char* Msg = (unsigned char*)JS_BUFFER_TO_CHAR(args[1], &MsgLen);
+	
+	size_t MsgLenEnc;
+	RSA* rsa = createPrivateRSA(std::string(key));
+	if (rsa == nullptr) {
+		// std::cerr << "_RSASign: createPrivateRSA failed.\n" << std::endl;
+		JS_ERROR("_RSASign: createPrivateRSA failed.\n");
+		return;
+	}
+
+	EVP_MD_CTX* m_RSASignCtx = EVP_MD_CTX_create();
+	EVP_PKEY* priKey  = EVP_PKEY_new();
+	EVP_PKEY_assign_RSA(priKey, rsa);
+	if (EVP_DigestSignInit(m_RSASignCtx,NULL, EVP_sha256(), NULL, priKey) <= 0) {
+		args.GetReturnValue().Set(JS_NULL);
+		JS_ERROR("_RSASign: EVP_DigestSignInit failed.\n");
+		free(rsa);
+    	return;
+	}
+	if (EVP_DigestSignUpdate(m_RSASignCtx, Msg, MsgLen) <= 0) {
+		args.GetReturnValue().Set(JS_NULL);
+		JS_ERROR("_RSASign: EVP_DigestSignUpdate failed.\n");
+		free(rsa);
+    	return;
+	}
+	if (EVP_DigestSignFinal(m_RSASignCtx, NULL, &MsgLenEnc) <= 0) {
+		args.GetReturnValue().Set(JS_NULL);
+		JS_ERROR("_RSASign: EVP_DigestSignFinal with NULL failed.\n");
+		free(rsa);
+    	return;
+	}
+	unsigned char* EncMsg = new unsigned char[MsgLenEnc]; //(unsigned char*)malloc(MsgLenEnc);
+	if (EVP_DigestSignFinal(m_RSASignCtx, EncMsg, &MsgLenEnc) <= 0) {
+		args.GetReturnValue().Set(JS_NULL);
+		JS_ERROR("_RSASign: EVP_DigestSignFinal with EncMsg failed./n");
+		free(rsa);
+    	return;
+	}
+	EVP_MD_CTX_free(m_RSASignCtx);
+	v8::Local<v8::Value> buffer = JS_BUFFER((char*)EncMsg, MsgLenEnc);
+	delete[] EncMsg;
+	args.GetReturnValue().Set(buffer);
+	free(rsa);
+}
+
+JS_METHOD(_RSAVerifySignature) { // Buffer key, Buffer messageHash, Buffer message
+	if (args.Length() != 3) {
+		JS_ERROR("_RSAVerifySignature: wrong number of arguments");
+		return;
+	}
+	if (!IS_BUFFER(args[0])) {
+		JS_ERROR("_RSAVerifySignature: first argument is not Buffer");
+		return;
+	}
+	if (!IS_BUFFER(args[1])) {
+		JS_ERROR("_RSAVerifySignature: second argument is not Buffer");
+		return;
+	}
+	if (!IS_BUFFER(args[2])) {
+		JS_ERROR("_RSAVerifySignature: third argument is not Buffer");
+		return;
+	}
+	size_t KeyLen;
+	size_t MsgHashLen;
+	size_t MsgLen;
+	char* key = JS_BUFFER_TO_CHAR(args[0], &KeyLen);
+	unsigned char* MsgHash = (unsigned char*)JS_BUFFER_TO_CHAR(args[1], &MsgHashLen);
+	const char* Msg = JS_BUFFER_TO_CHAR(args[2], &MsgLen);
+
+	RSA* rsa = createPublicRSA(std::string((key)));
+
+	if (rsa == nullptr) {
+		// std::cerr << "_RSAVerifySignature: createPublicRSA failed.\n" << std::endl;
+		JS_ERROR("_RSAVerifySignature: createPublicRSA failed.\n");
+		return;
+	}
+
+	EVP_PKEY* pubKey  = EVP_PKEY_new();
+	EVP_PKEY_assign_RSA(pubKey, rsa);
+	EVP_MD_CTX* m_RSAVerifyCtx = EVP_MD_CTX_create();
+
+	// std::cerr << "TLS _RSAVerifySignature before init\n" << std::endl;
+	if (EVP_DigestVerifyInit(m_RSAVerifyCtx,NULL, EVP_sha256(),NULL,pubKey)<=0) {
+		args.GetReturnValue().Set(JS_BOOL(false));
+		JS_ERROR("_RSAVerifySignature: EVP_DigestVerifyInit failed.\n");
+		free(rsa);
+		// JS_ERROR?
+		return;
+	}
+	// std::cerr << "TLS _RSAVerifySignature before update\n" << std::endl;
+	if (EVP_DigestVerifyUpdate(m_RSAVerifyCtx, Msg, MsgLen) <= 0) {
+		args.GetReturnValue().Set(JS_BOOL(false));
+		JS_ERROR("_RSAVerifySignature: EVP_DigestVerifyUpdate failed.\n");
+		free(rsa);
+		// JS_ERROR?
+		return;
+	}
+	// std::cerr << "TLS _RSAVerifySignature before final\n" << std::endl;
+	int AuthStatus;
+	try {
+		AuthStatus = EVP_DigestVerifyFinal(m_RSAVerifyCtx, MsgHash, MsgHashLen);
+	} catch (std::string e) {
+		// std::cerr << "TLS _RSAVerifySignature exception: " << e << std::endl;
+		EVP_MD_CTX_free(m_RSAVerifyCtx);
+		free(rsa);
+		args.GetReturnValue().Set(JS_BOOL(false));
+		JS_ERROR("_RSAVerifySignature: EVP_DigestVerifyFinal failed.\n");
+		return;
+	}
+	// std::cerr << "TLS _RSAVerifySignature before checking result\n" << std::endl;
+	if (AuthStatus == 1) {
+		//Authentic = true;
+		EVP_MD_CTX_free(m_RSAVerifyCtx);
+		free(rsa);
+		args.GetReturnValue().Set(JS_BOOL(true));
+		return;
+	}
+	else if(AuthStatus==0) {
+		// std::cerr << "TLS _RSAVerifySignature Auth=0\n" << std::endl;
+		//*Authentic = false;
+		EVP_MD_CTX_free(m_RSAVerifyCtx);
+		free(rsa);
+		// no JS_ERROR
+		args.GetReturnValue().Set(JS_BOOL(false));
+		return;
+	}
+	else {
+		// std::cerr << "TLS _RSAVerifySignature Auth error\n" << std::endl;
+		//*Authentic = false;
+		EVP_MD_CTX_free(m_RSAVerifyCtx);
+		free(rsa);
+		// JS_ERROR?
+		args.GetReturnValue().Set(JS_BOOL(false));
+		JS_ERROR("_RSAVerifySignature: EVP_DigestVerifyFinal failed.\n");
+		return;
+	}
+}
+
 }
 
 SHARED_INIT() {
@@ -492,6 +670,9 @@ SHARED_INIT() {
 
 	v8::Local<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(JS_ISOLATE, _tls);
 	ft->SetClassName(JS_STR("TLS"));
+
+	ft->Set(JS_ISOLATE,"RSASign",			   v8::FunctionTemplate::New(JS_ISOLATE, _RSASign));
+	ft->Set(JS_ISOLATE,"RSAVerifySignature",   v8::FunctionTemplate::New(JS_ISOLATE, _RSAVerifySignature));
 	
 	v8::Local<v8::ObjectTemplate> it = ft->InstanceTemplate();
 	it->SetInternalFieldCount(2); /* socket, ssl */
