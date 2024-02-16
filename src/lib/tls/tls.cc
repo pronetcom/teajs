@@ -9,10 +9,12 @@
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
+#include <array>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
- #include <openssl/rsa.h>
+#include <openssl/rsa.h>
+#include <openssl/hmac.h>
 
 #ifdef windows
 #  define sock_errno WSAGetLastError()
@@ -649,6 +651,125 @@ JS_METHOD(_RSAVerifySignature) { // Buffer key, Buffer messageHash, Buffer messa
 	}
 }
 
+const EVP_MD* getAlgorithm(std::string algo) {
+	if (algo == "md4") {
+		return EVP_md4();
+	}
+	else if (algo == "md5") {
+		return EVP_md5();
+	}
+	else if (algo == "sha1") {
+		return EVP_sha1();
+	}
+	else if (algo == "sha224") {
+		return EVP_sha224();
+	}
+	else if (algo == "sha256") {
+		return EVP_sha256();
+	}
+	else if (algo == "sha384") {
+		return EVP_sha384();
+	}
+	else if (algo == "sha512/224") {
+		return EVP_sha512_224();
+	}
+	else if (algo == "sha512/256") {
+		return EVP_sha512_256();
+	}
+	else if (algo == "sha512") {
+		return EVP_sha512();
+	}
+	else if (algo == "sha3-224") {
+		return EVP_sha3_224();
+	}
+	else if (algo == "sha3-256") {
+		return EVP_sha3_256();
+	}
+	else if (algo == "sha3-384") {
+		return EVP_sha3_384();
+	}
+	else if (algo == "sha3-512") {
+		return EVP_sha3_512();
+	}
+	else if (algo == "ripemd160") {
+		return EVP_ripemd160();
+	}
+	else if (algo == "whirlpool") {
+		return EVP_whirlpool();
+	}
+	else {
+		return nullptr;
+	}
+}
+
+JS_METHOD(_hash_hmac) { // algo, data, key
+	if (args.Length() != 3) {
+		JS_ERROR("_hash_hmac: wrong number of arguments");
+		return;
+	}
+	if (!IS_BUFFER(args[0])) {
+		JS_ERROR("_hash_hmac: first argument is not Buffer");
+		return;
+	}
+	if (!IS_BUFFER(args[1])) {
+		JS_ERROR("_hash_hmac: second argument is not Buffer");
+		return;
+	}
+	if (!IS_BUFFER(args[2])) {
+		JS_ERROR("_hash_hmac: third argument is not Buffer");
+		return;
+	}
+	size_t AlgoLen;
+	size_t MsgLen;
+	size_t KeyLen;
+	char* algo = JS_BUFFER_TO_CHAR(args[0], &AlgoLen);
+	algo[AlgoLen] = '\0';
+	// std::cerr << "_hash_hmac algo: " << algo << std::endl;
+	char* Msg = JS_BUFFER_TO_CHAR(args[1], &MsgLen);
+	// std::cerr << "_hash_hmac message: " << Msg << std::endl;
+	char* key = JS_BUFFER_TO_CHAR(args[2], &KeyLen);
+	// std::cerr << "_hash_hmac key: " << key << std::endl;
+
+	std::array<unsigned char, EVP_MAX_MD_SIZE> hash;
+	//unsigned char* hash = nullptr;
+    unsigned int hashLen;
+
+	const EVP_MD* actualAlgo = getAlgorithm(algo);
+	if (actualAlgo == nullptr) {
+		std::string error = "_hash_hmac: unknown algorithm ";
+		error += algo;
+		JS_ERROR(error.c_str());
+		return;
+	}
+	//std::cerr << "_hash_hmac data: " << hash << std::endl;
+    HMAC(
+        actualAlgo,
+        key,
+        static_cast<int>(KeyLen),
+        reinterpret_cast<unsigned char const*>(Msg),
+        static_cast<int>(MsgLen),
+        hash.data(),
+        &hashLen
+    );
+	// std::cerr << "_hash_hmac data: " << hash.data() << std::endl;
+
+	std::string hex_tab = "0123456789abcdef";
+	char* result = new char[hashLen * 2 + 1];
+	for(int i = 0; i < (int)hashLen; i++) {
+		result[i * 2] = hex_tab[((int)hash.at(i)) >> 4];
+		result[i * 2 + 1] = hex_tab[((int)hash.at(i)) & 0xF];
+	}
+	result[hashLen * 2] = '\0';
+
+	// std::cerr << "_hash_hmac result: " << result << std::endl;
+	// std::cerr << "_hash_hmac result size: " << hashLen * 2 + 1 << std::endl;
+	
+	v8::Local<v8::Value> buffer = JS_BUFFER(result, hashLen * 2 + 1);
+	args.GetReturnValue().Set(buffer);
+	delete[] result;
+	return;
+}
+
 }
 
 SHARED_INIT() {
@@ -673,6 +794,7 @@ SHARED_INIT() {
 
 	ft->Set(JS_ISOLATE,"RSASign",			   v8::FunctionTemplate::New(JS_ISOLATE, _RSASign));
 	ft->Set(JS_ISOLATE,"RSAVerifySignature",   v8::FunctionTemplate::New(JS_ISOLATE, _RSAVerifySignature));
+	ft->Set(JS_ISOLATE,"HashHmac",   		   v8::FunctionTemplate::New(JS_ISOLATE, _hash_hmac));
 	
 	v8::Local<v8::ObjectTemplate> it = ft->InstanceTemplate();
 	it->SetInternalFieldCount(2); /* socket, ssl */
