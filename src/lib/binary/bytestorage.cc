@@ -134,7 +134,7 @@ ByteStorage::ByteStorage(ByteStorageData *_data)
 /**
  * Use a given buffer + length
  */
-ByteStorage::ByteStorage(char * data, size_t length) {
+ByteStorage::ByteStorage(const char* data, size_t length) {
 	this->length = length;
 	this->storage = new ByteStorageData(length);
 	JS_ISOLATE->AdjustAmountOfExternalAllocatedMemory(length);
