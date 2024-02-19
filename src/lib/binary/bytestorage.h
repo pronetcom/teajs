@@ -33,7 +33,7 @@ class ByteStorage {
 public:
 	ByteStorage(size_t length); /* empty */
 	ByteStorage(ByteStorageData *data); /* empty */
-	ByteStorage(char * data, size_t length); /* with contents (copied) */
+	ByteStorage(const char* data, size_t length); /* with contents (copied) */
 	ByteStorage(ByteStorage * master, size_t index1, size_t index2); /* new view */
 	~ByteStorage();
 	

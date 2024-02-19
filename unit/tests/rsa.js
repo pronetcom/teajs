@@ -36,15 +36,19 @@ PpY72+eVthKzpMeyHkBn7ciumk5qgLTEJAfWZpe4f4eFZj/Rc8Y8Jj2IS5kVPjUy\n\
 wQIDAQAB\n\
 -----END PUBLIC KEY-----\n";
 
+var assert = require("assert");
 var TLS = require("tls").TLS;
 var Buffer = require("binary").Buffer;
 
 var plainText = "Testing message.";
 
-try {
-    var sign = TLS.RSASign(new Buffer(privateKey, "utf-8"), new Buffer(plainText, "utf-8"));
-    var result = TLS.RSAVerifySignature(new Buffer(publicKey, "utf-8"), new Buffer(sign, "utf-8"), new Buffer(plainText, "utf-8"));
-    system.stdout.writeLine("RSAVerifySignature result:" + result);
-} catch(e) {
-    system.stdout.writeLine(e);
+exports.testRSA = function() {
+    try {
+        var sign = TLS.RSASign(new Buffer(privateKey, "utf-8"), new Buffer(plainText, "utf-8"));
+        // system.stdout.writeLine(sign);
+        var result = TLS.RSAVerifySignature(new Buffer(publicKey, "utf-8"), new Buffer(sign, "utf-8"), new Buffer(plainText, "utf-8"));
+        assert.equal(result, true, "rsa with correct keys");
+    } catch(e) {
+        system.stdout.writeLine(e);
+    }
 }

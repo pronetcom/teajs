@@ -64,7 +64,7 @@ v8::Local<v8::Value> JS_ERROR(const std::string& data);
 #   define SHARED_INIT() extern "C" void init(v8::Local<v8::Function> require, v8::Local<v8::Object> exports, v8::Local<v8::Object> module)
 #endif
 
-inline v8::Local<v8::Value> BYTESTORAGE_TO_JS(ByteStorage * bs) {
+inline v8::Local<v8::Value> BYTESTORAGE_TO_JS(ByteStorage* bs) {
 	v8::Local<v8::Object> binary = v8::Local<v8::Object>::New(JS_ISOLATE, (APP_PTR)->require("binary", ""));
 	v8::Local<v8::Function> buffer = v8::Local<v8::Function>::Cast(binary->Get(JS_CONTEXT,JS_STR("Buffer")).ToLocalChecked());
 	v8::Local<v8::Value> newargs[] = { v8::External::New(JS_ISOLATE, (void*)bs) };
@@ -76,12 +76,12 @@ inline ByteStorage * JS_TO_BYTESTORAGE(v8::Local<v8::Value> value) {
 	return LOAD_PTR_FROM(object, 0, ByteStorage *);
 }
 
-inline v8::Local<v8::Value> JS_BUFFER(char * data, size_t length) {
-	ByteStorage * bs = new ByteStorage(data, length);
+inline v8::Local<v8::Value> JS_BUFFER(const char* data, size_t length) {
+	ByteStorage* bs = new ByteStorage(data, length);
 	return BYTESTORAGE_TO_JS(bs);
 }
 
-inline char * JS_BUFFER_TO_CHAR(v8::Local<v8::Value> value, size_t * size) {
+inline char * JS_BUFFER_TO_CHAR(v8::Local<v8::Value> value, size_t* size) {
 	ByteStorage * bs = JS_TO_BYTESTORAGE(value);
 	*size = bs->getLength();
 	return bs->getData();
