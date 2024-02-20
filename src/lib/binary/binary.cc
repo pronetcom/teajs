@@ -167,14 +167,14 @@ JS_METHOD(Buffer_toString) {
 	if (args.Length() == 0) {
 		size_t tmpSize = 100;
 		std::string result = "[Buffer ";
-		char * tmp = (char *) malloc(tmpSize);
+		char* tmp = new char [tmpSize];//(char *) malloc(tmpSize);
 		if (tmp) {
 			size_t size = snprintf(tmp, tmpSize, "%lu", (unsigned long) bs->getLength());
 			if (size < tmpSize) { result += tmp; }
-			free(tmp);
+			delete[] tmp;
 		}
 		result += "]";
-		JS_STR(result.c_str());
+		args.GetReturnValue().Set(JS_STR(result.c_str()));
 		return;
 	}
 	

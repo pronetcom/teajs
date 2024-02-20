@@ -10,6 +10,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <array>
+#include <typeinfo>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -651,7 +652,7 @@ JS_METHOD(_RSAVerifySignature) { // Buffer key, Buffer messageHash, Buffer messa
 	}
 }
 
-const EVP_MD* getAlgorithm(std::string algo) {
+const EVP_MD* getAlgorithm(const std::string& algo) {
 	if (algo == "md4") {
 		return EVP_md4();
 	}
@@ -707,32 +708,54 @@ JS_METHOD(_hash_hmac) { // algo, data, key
 		JS_ERROR("_hash_hmac: wrong number of arguments");
 		return;
 	}
-	if (!IS_BUFFER(args[0])) {
-		JS_ERROR("_hash_hmac: first argument is not Buffer");
+	std::string algo, Msg, key;
+
+	size_t AlgoLen, MsgLen, KeyLen;
+
+	if (IS_BUFFER(args[0])) {
+		algo = std::string(JS_BUFFER_TO_CHAR(args[0], &AlgoLen), AlgoLen);
+	}
+	else if (args[0]->IsString()) {
+		v8::String::Utf8Value algoV8(JS_ISOLATE, args[0]);
+		AlgoLen = algoV8.length();		
+		algo = std::string(*algoV8, AlgoLen);
+	}
+	else {
+		JS_ERROR("_hash_hmac: first argument is not Buffer and not String");
 		return;
 	}
-	if (!IS_BUFFER(args[1])) {
-		JS_ERROR("_hash_hmac: second argument is not Buffer");
+	// std::cerr << "algo: " << algo << std::endl;
+
+	if (IS_BUFFER(args[1])) {
+		Msg = std::string(JS_BUFFER_TO_CHAR(args[1], &MsgLen), MsgLen);
+	}
+	else if (args[1]->IsString()) {
+		v8::String::Utf8Value MsgV8(JS_ISOLATE, args[1]);
+		MsgLen = MsgV8.length();		
+		Msg = std::string(*MsgV8, MsgLen);
+	}
+	else {
+		JS_ERROR("_hash_hmac: second argument is not Buffer and not String");
 		return;
 	}
-	if (!IS_BUFFER(args[2])) {
-		JS_ERROR("_hash_hmac: third argument is not Buffer");
+	// std::cerr << "message: " << Msg << std::endl;
+
+	if (IS_BUFFER(args[2])) {
+		key = std::string(JS_BUFFER_TO_CHAR(args[2], &KeyLen), KeyLen);
+	}
+	else if (args[2]->IsString()) {
+		v8::String::Utf8Value keyV8(JS_ISOLATE, args[2]);
+		KeyLen = keyV8.length();		
+		key = std::string(*keyV8, KeyLen);
+	}
+	else {
+		JS_ERROR("_hash_hmac: third argument is not Buffer and not String");
 		return;
 	}
-	size_t AlgoLen;
-	size_t MsgLen;
-	size_t KeyLen;
-	char* algo = JS_BUFFER_TO_CHAR(args[0], &AlgoLen);
-	algo[AlgoLen] = '\0';
-	// std::cerr << "_hash_hmac algo: " << algo << std::endl;
-	char* Msg = JS_BUFFER_TO_CHAR(args[1], &MsgLen);
-	// std::cerr << "_hash_hmac message: " << Msg << std::endl;
-	char* key = JS_BUFFER_TO_CHAR(args[2], &KeyLen);
-	// std::cerr << "_hash_hmac key: " << key << std::endl;
+	// std::cerr << "key: " << key << std::endl;
 
 	std::array<unsigned char, EVP_MAX_MD_SIZE> hash;
-	//unsigned char* hash = nullptr;
-    unsigned int hashLen;
+	unsigned int hashLen;
 
 	const EVP_MD* actualAlgo = getAlgorithm(algo);
 	if (actualAlgo == nullptr) {
@@ -741,32 +764,26 @@ JS_METHOD(_hash_hmac) { // algo, data, key
 		JS_ERROR(error.c_str());
 		return;
 	}
-	//std::cerr << "_hash_hmac data: " << hash << std::endl;
-    HMAC(
+
+	HMAC(
         actualAlgo,
-        key,
+        key.c_str(),
         static_cast<int>(KeyLen),
-        reinterpret_cast<unsigned char const*>(Msg),
+        reinterpret_cast<unsigned char const*>(Msg.c_str()),
         static_cast<int>(MsgLen),
         hash.data(),
         &hashLen
     );
-	// std::cerr << "_hash_hmac data: " << hash.data() << std::endl;
-
-	std::string hex_tab = "0123456789abcdef";
-	char* result = new char[hashLen * 2 + 1];
-	for(int i = 0; i < (int)hashLen; i++) {
-		result[i * 2] = hex_tab[((int)hash.at(i)) >> 4];
-		result[i * 2 + 1] = hex_tab[((int)hash.at(i)) & 0xF];
-	}
-	result[hashLen * 2] = '\0';
-
-	// std::cerr << "_hash_hmac result: " << result << std::endl;
-	// std::cerr << "_hash_hmac result size: " << hashLen * 2 + 1 << std::endl;
 	
-	v8::Local<v8::Value> buffer = JS_BUFFER(result, hashLen * 2 + 1);
+	std::string hex_tab = "0123456789abcdef";
+	std::string result = "";
+	for(int i = 0; i < (int)hashLen; i++) {
+		result += hex_tab[((int)hash.at(i)) >> 4];
+		result += hex_tab[((int)hash.at(i)) & 0xF];
+	}
+
+	v8::Local<v8::Value> buffer = JS_BUFFER(result.c_str(), hashLen * 2);
 	args.GetReturnValue().Set(buffer);
-	delete[] result;
 	return;
 }
 
