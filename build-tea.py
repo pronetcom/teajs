@@ -39,6 +39,13 @@ def get_dependencies_list(params):
             "optional":1,
             "includes_copy_recursive":["libmemcached","libmemcached-1.0","libhashkit-1.0","sasl"],
             "libraries":[]
+        },
+        {
+            "name":"zip",
+            "name_pkg_config":"libzip",
+            "optional":0,
+            "includes_copy":["zipconf.h", "zip.h"],
+            "libraries":[]
         }
     ]
 
