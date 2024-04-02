@@ -97,15 +97,14 @@ JS_METHOD(_readFile) {
 	if ((!args[0]->IsString()) && (!args[0]->IsNumber())) { JS_ERROR("Wrong type of first argument"); return; }
 	ArchiverBase* archiver = ARCHIVER_THIS;
 	ByteStorage* result = nullptr;
-	int64_t len = 0;
 	if (args.Length() == 1) {
 		if (args[0]->IsString()) {
 			v8::String::Utf8Value name(JS_ISOLATE, args[0]);
-			len = archiver->readFileByName(*name, 10000, result);
+			result = archiver->readFileByName(*name, 10000);
 		}
 		else {
 			int64_t index = (int64_t)args[0]->IntegerValue(JS_CONTEXT).ToChecked();
-			len = archiver->readFileByIndex(index, 10000, result);
+			result = archiver->readFileByIndex(index, 10000);
 		}
 	}
 	else {
@@ -115,15 +114,15 @@ JS_METHOD(_readFile) {
 
 		if (args[0]->IsString()) {
 			v8::String::Utf8Value name(JS_ISOLATE, args[0]);
-			len = archiver->readFileByName(*name, maxSize, result);
+			result = archiver->readFileByName(*name, maxSize);
 		}
 		else {
 			int64_t index = (int64_t)args[0]->IntegerValue(JS_CONTEXT).ToChecked();
-			len = archiver->readFileByIndex(index, maxSize, result);
+			result = archiver->readFileByIndex(index, maxSize);
 		}
 	}
 
-	if (len < 0) {
+	if (result == nullptr) {
 		JS_ERROR(archiver->getError());
 		return;
 	}

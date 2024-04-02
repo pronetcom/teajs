@@ -6,7 +6,6 @@
 
 ArchiverZip::ArchiverZip() {
     archive = nullptr;
-    err = 0;
     jsError = "";
 }
 
@@ -14,6 +13,7 @@ ArchiverZip::~ArchiverZip() {
     if(this->close()) {
         JS_ERROR(jsError);
     }
+    // std::cerr << "archive close point 7" << std::endl;
 }
 
 const std::string ArchiverZip::getError() const {
@@ -21,6 +21,7 @@ const std::string ArchiverZip::getError() const {
 }
 
 bool ArchiverZip::open(std::string path, int flags) {
+    int err;
     if ((archive = zip_open(path.c_str(), flags, &err)) == nullptr) {
         zip_error_t error;
         zip_error_init_with_code(&error, err);
@@ -50,6 +51,7 @@ bool ArchiverZip::close() { // true if an error occured
         free(buffers[i]);
     }
     buffers.clear();
+    return false;
 }
 
 int64_t ArchiverZip::addFile(std::string fileNameInZip, const char* source, size_t sourceSize, bool useAsBuffer) {
@@ -95,8 +97,7 @@ int64_t ArchiverZip::addDir(std::string dirNameInZip) {
     return (int64_t)result;
 }
 
-int64_t ArchiverZip::readFileByName(const std::string& fileNameInZip, const uint64_t maxSize, ByteStorage* result) {
-    result = nullptr;
+ByteStorage* ArchiverZip::readFileByName(const std::string& fileNameInZip, const uint64_t maxSize) {
     zip_file* file;
     if (!(file = zip_fopen(archive, fileNameInZip.c_str(), 0))) {
         // fprintf(stderr, "boese, boese\n");
@@ -104,7 +105,7 @@ int64_t ArchiverZip::readFileByName(const std::string& fileNameInZip, const uint
         // zip_close(archive);
         jsError = "Failed to open file from zip: ";
         jsError += zip_strerror(archive);
-        return -5;
+        return nullptr;
     }
     char* buffer = new char[maxSize + 1];
     buffer[maxSize] = '\0';
@@ -113,22 +114,21 @@ int64_t ArchiverZip::readFileByName(const std::string& fileNameInZip, const uint
         delete[] buffer;
         jsError = "Failed to read file from zip: ";
         jsError += zip_strerror(archive);
-        return -3;
+        return nullptr;
     }
 
     if (zip_fclose(file)) {
         delete[] buffer;
         jsError = "Failed to close file from zip: ";
         jsError += zip_strerror(archive);
-        return -1;
+        return nullptr;
     }
-    result = new ByteStorage(buffer, len);
+    ByteStorage* result = new ByteStorage(buffer, len);
     delete[] buffer;
-    return len;
+    return result;
 }
 
-int64_t ArchiverZip::readFileByIndex(const int64_t fileIndexInZip, const uint64_t maxSize, ByteStorage* result) {
-    result = nullptr;
+ByteStorage* ArchiverZip::readFileByIndex(const int64_t fileIndexInZip, const uint64_t maxSize) {
     zip_file* file;
     if (!(file = zip_fopen_index(archive, fileIndexInZip, 0))) {
         // fprintf(stderr, "boese, boese\n");
@@ -136,7 +136,7 @@ int64_t ArchiverZip::readFileByIndex(const int64_t fileIndexInZip, const uint64_
         // zip_close(archive);
         jsError = "Failed to open file from zip: ";
         jsError += zip_strerror(archive);
-        return -5;
+        return nullptr;
     }
     char* buffer = new char[maxSize + 1];
     buffer[maxSize] = '\0';
@@ -145,18 +145,18 @@ int64_t ArchiverZip::readFileByIndex(const int64_t fileIndexInZip, const uint64_
         delete[] buffer;
         jsError = "Failed to read file from zip: ";
         jsError += zip_strerror(archive);
-        return -3;
+        return nullptr;
     }
 
     if (zip_fclose(file)) {
         delete[] buffer;
         jsError = "Failed to close file from zip: ";
         jsError += zip_strerror(archive);
-        return 1;
+        return nullptr;
     }
-    result = new ByteStorage(buffer, len);
+    ByteStorage* result = new ByteStorage(buffer, len);
     delete[] buffer;
-    return len;
+    return result;
 }
 /*
 void* ArchiverZip::getArchive() {

@@ -12,12 +12,11 @@ public:
     bool close();
     int64_t addFile(std::string fileNameInZip, const char* source, size_t sourceSize, bool useAsBuffer = false);
     int64_t addDir(std::string dirNameInZip);
-    int64_t readFileByName(const std::string& fileNameInZip, const uint64_t maxSize, ByteStorage* result);
-    int64_t readFileByIndex(const int64_t fileIndexInZip, const uint64_t maxSize, ByteStorage* result);
+    ByteStorage* readFileByName(const std::string& fileNameInZip, const uint64_t maxSize);
+    ByteStorage* readFileByIndex(const int64_t fileIndexInZip, const uint64_t maxSize);
     // void* getArchive();
 private:
     zip_t* archive;
-    int err;
     std::string jsError;
     std::vector<void*> buffers;
 };
