@@ -151,11 +151,15 @@ SHARED_INIT() {
 	/**
 	 * Constants (Archiver.*)
 	 */
-	archiverTemplate->Set(JS_ISOLATE,"ZIP_CHECKCONS"	, JS_INT(ZIP_CHECKCONS)); 
-	archiverTemplate->Set(JS_ISOLATE,"ZIP_CREATE"		, JS_INT(ZIP_CREATE)); 
-	archiverTemplate->Set(JS_ISOLATE,"ZIP_EXCL"			, JS_INT(ZIP_EXCL)); 
-	archiverTemplate->Set(JS_ISOLATE,"ZIP_TRUNCATE"		, JS_INT(ZIP_TRUNCATE));
-	archiverTemplate->Set(JS_ISOLATE,"ZIP_RDONLY"		, JS_INT(ZIP_RDONLY));
+	// should be used in constructor
+	archiverTemplate->Set(JS_ISOLATE, "ZIP"	, JS_INT(ArchiverBase::ZIP));
+
+	// other constants
+	archiverTemplate->Set(JS_ISOLATE, "ZIP_CHECKCONS"	, JS_INT(ZIP_CHECKCONS)); 
+	archiverTemplate->Set(JS_ISOLATE, "ZIP_CREATE"		, JS_INT(ZIP_CREATE)); 
+	archiverTemplate->Set(JS_ISOLATE, "ZIP_EXCL"		, JS_INT(ZIP_EXCL)); 
+	archiverTemplate->Set(JS_ISOLATE, "ZIP_TRUNCATE"	, JS_INT(ZIP_TRUNCATE));
+	archiverTemplate->Set(JS_ISOLATE, "ZIP_RDONLY"		, JS_INT(ZIP_RDONLY));
 
 	v8::Local<v8::ObjectTemplate> archiverInstance = archiverTemplate->InstanceTemplate();
 	archiverInstance->SetInternalFieldCount(1); /* archiver */

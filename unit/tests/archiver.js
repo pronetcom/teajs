@@ -8,7 +8,7 @@ var fileToZip = "/home/vismut-fo/teajs/unit/tests/texts/short-file.txt"
 exports.testArchiveZip = function() {
     try {
         system.stdout.writeLine("archiver before constructor");
-        var archiver = new Archiver(0);
+        var archiver = new Archiver(Archiver.ZIP);
         system.stdout.writeLine("archiver before opening archive");
         archiver.open("unit/tests/texts/tempArchive.zip", Archiver.ZIP_TRUNCATE | Archiver.ZIP_CREATE);
         system.stdout.writeLine("archiver before adding file");
