@@ -16,7 +16,7 @@ jobs:
           sudo apt-get remove libgd3
       - name: install libraries
         run: |
-          sudo apt-get install -yq libgd-tools libgd-dev zlib1g-dev libfcgi-dev libx32stdc++6-amd64-cross libssl-dev libmemcached-dev
+          sudo apt-get install -yq libgd-tools libgd-dev zlib1g-dev libfcgi-dev libx32stdc++6-amd64-cross libssl-dev libmemcached-dev libzip-dev
       - uses: actions/checkout@v2
       - name: build v8
         run: |
