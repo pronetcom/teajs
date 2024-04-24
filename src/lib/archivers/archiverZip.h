@@ -14,7 +14,7 @@ public:
     int64_t addDir(std::string dirNameInZip);
     ByteStorage* readFileByName(const std::string& fileNameInZip, const uint64_t maxSize);
     ByteStorage* readFileByIndex(const int64_t fileIndexInZip, const uint64_t maxSize);
-    // void* getArchive();
+    char* getArchive(size_t *len);
 private:
     zip_t* archive;
     std::string jsError;

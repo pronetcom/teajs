@@ -13,7 +13,7 @@ public:
     virtual int64_t addDir(std::string dirNameInZip);
     virtual ByteStorage* readFileByName(const std::string& fileNameInZip, const uint64_t maxSize);
     virtual ByteStorage* readFileByIndex(const int64_t fileIndexInZip, const uint64_t maxSize);
-    // virtual void* getArchive();
+    virtual char* getArchive(size_t *len);
     virtual ~ArchiverBase();
     enum Type {
         ZIP = 0

@@ -130,6 +130,16 @@ JS_METHOD(_readFile) {
 	return;
 }
 
+JS_METHOD(_getArchiveSource) {
+	if (args.Length() != 0) { JS_ERROR("Wrong number of arguments"); return; }
+	ArchiverBase* archiver = ARCHIVER_THIS;
+	size_t len;
+	ByteStorage* result = new ByteStorage(archiver->getArchive(&len), len);
+	if (archiver->close()) {
+		JS_ERROR(archiver->getError());
+	}
+}
+
 JS_METHOD(_close) {
 	if (args.Length() != 0) { JS_ERROR("Wrong number of arguments"); return; }
 	ArchiverBase* archiver = ARCHIVER_THIS;

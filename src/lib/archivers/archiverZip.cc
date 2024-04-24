@@ -158,8 +158,8 @@ ByteStorage* ArchiverZip::readFileByIndex(const int64_t fileIndexInZip, const ui
     delete[] buffer;
     return result;
 }
-/*
-void* ArchiverZip::getArchive() {
 
+char* ArchiverZip::getArchive(size_t *len) {
+    *len = 0;
+    return nullptr;
 }
-*/
