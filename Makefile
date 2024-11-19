@@ -49,11 +49,12 @@ LIBS_Z=$(LDFLAGS) -lz
 LIBS_TLS=$(LDFLAGS) -lssl -lcrypto
 LIBS_GD=$(LDFLAGS) -lgd 
 LIBS_CURSES=$(LDFLAGS) -lncurses
+LIBS_ZIP=$(LDFLAGS) -lzip
 
 ifeq ($(MEMCACHED_LIBRARY),)
-all: tea libtea$(LIB_SUFFIX) lib/binary$(LIB_SUFFIX) lib/fs$(LIB_SUFFIX) lib/gd$(LIB_SUFFIX) lib/process$(LIB_SUFFIX) lib/pgsql$(LIB_SUFFIX) lib/socket$(LIB_SUFFIX) lib/tls$(LIB_SUFFIX) lib/zlib$(LIB_SUFFIX) lib/curses$(LIB_SUFFIX) teajs.conf lib/snapshot_blob.bin
+all: tea libtea$(LIB_SUFFIX) lib/binary$(LIB_SUFFIX) lib/fs$(LIB_SUFFIX) lib/gd$(LIB_SUFFIX) lib/process$(LIB_SUFFIX) lib/pgsql$(LIB_SUFFIX) lib/socket$(LIB_SUFFIX) lib/tls$(LIB_SUFFIX) lib/zlib$(LIB_SUFFIX) lib/curses$(LIB_SUFFIX) teajs.conf lib/snapshot_blob.bin lib/archive$(LIB_SUFFIX)
 else
-all: tea libtea$(LIB_SUFFIX) lib/binary$(LIB_SUFFIX) lib/fs$(LIB_SUFFIX) lib/gd$(LIB_SUFFIX) lib/process$(LIB_SUFFIX) lib/pgsql$(LIB_SUFFIX) lib/socket$(LIB_SUFFIX) lib/tls$(LIB_SUFFIX) lib/zlib$(LIB_SUFFIX) lib/curses$(LIB_SUFFIX) lib/memcached$(LIB_SUFFIX) teajs.conf lib/snapshot_blob.bin
+all: tea libtea$(LIB_SUFFIX) lib/binary$(LIB_SUFFIX) lib/fs$(LIB_SUFFIX) lib/gd$(LIB_SUFFIX) lib/process$(LIB_SUFFIX) lib/pgsql$(LIB_SUFFIX) lib/socket$(LIB_SUFFIX) lib/tls$(LIB_SUFFIX) lib/zlib$(LIB_SUFFIX) lib/curses$(LIB_SUFFIX) lib/memcached$(LIB_SUFFIX) teajs.conf lib/snapshot_blob.bin lib/archive$(LIB_SUFFIX)
 endif
 
 lib/snapshot_blob.bin: ${V8_COMPILEDIR}/snapshot_blob.bin
@@ -141,3 +142,6 @@ lib/zlib$(LIB_SUFFIX): src/lib/zlib/zlib.o libtea$(LIB_SUFFIX)
 
 lib/curses$(LIB_SUFFIX): src/lib/curses/curses.o libtea$(LIB_SUFFIX)
 	$(CPP) -fPIC -o $@ -shared $^ $(LIBS_SO) $(LIBS_CURSES)
+
+lib/archive$(LIB_SUFFIX): src/lib/archivers/archiver.o src/lib/archivers/archiverZip.o libtea$(LIB_SUFFIX)
+	$(CPP) -fPIC -o $@ -shared $^ $(LIBS_SO) $(LIBS_ZIP)
