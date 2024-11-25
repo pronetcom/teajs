@@ -457,6 +457,9 @@ JS_METHOD(_query) {
 				params[i]=NULL;
 			} else if (val->IsNull()) {
 				params[i]=NULL;
+			} else if (val->IsObject()) {
+				v8::String::Utf8Value tval(JS_ISOLATE,v8::JSON::Stringify(JS_CONTEXT,val).ToLocalChecked());
+				params[i]=strdup(*tval);
 			} else {
 				v8::String::Utf8Value tval(JS_ISOLATE,val->ToString(JS_CONTEXT).ToLocalChecked());
 				if (tval.length()) params[i] = strdup(*tval); else params[i]=NULL;
